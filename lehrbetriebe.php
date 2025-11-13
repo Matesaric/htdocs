@@ -7,10 +7,10 @@ if ($mysqli->connect_error) {
     die(json_encode(["error" => "Verbindung fehlgeschlagen: " . $mysqli->connect_error]));
 }
 
-// Erlaubte Spalten
-$allowedColumns = ['id_lehrbetrieb', 'firma', 'strasse', 'plz', 'ort'];
+// Erlaubte Spalten für POST / PUT
+$allowedColumns = ['firma', 'strasse', 'plz', 'ort'];
 
-// --- Validierung ---
+// --- Validierung Funktion ---
 function validateField($key, $value) {
     switch ($key) {
         case 'plz':
@@ -18,33 +18,29 @@ function validateField($key, $value) {
                 return "Ungültige PLZ: '$value'. Erwartet wird 4-stellig, z.B. '9000'";
             }
             break;
+        case 'firma':
+        case 'strasse':
+        case 'ort':
+            if (!empty($value) && strlen($value) > 100) {
+                return "Ungültiger Wert für '$key': max. 100 Zeichen erlaubt.";
+            }
+            break;
     }
     return null;
 }
 
-// --- GET ---
+// --- GET nur nach ID ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $sql = "SELECT * FROM tbl_lehrbetriebe WHERE 1=1";
-    $params = [];
-    $types = "";
+    $id = $_GET['id_lehrbetrieb'] ?? null;
 
-    foreach ($_GET as $key => $value) {
-        if (in_array($key, $allowedColumns)) {
-            $sql .= " AND `$key` = ?";
-            $params[] = $value;
-            $types .= "s";
-        }
+    if (!$id) {
+        die(json_encode(["error" => "Für GET muss 'id_lehrbetrieb' als Parameter übergeben werden."]));
     }
 
-    $stmt = $mysqli->prepare($sql);
+    $stmt = $mysqli->prepare("SELECT * FROM tbl_lehrbetriebe WHERE id_lehrbetrieb = ?");
     if (!$stmt) die(json_encode(["error" => "Fehler bei prepare: " . $mysqli->error]));
 
-    if ($params) {
-        $bindNames = [&$types];
-        foreach ($params as $i => &$p) $bindNames[] = &$p;
-        call_user_func_array([$stmt, 'bind_param'], $bindNames);
-    }
-
+    $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
     echo json_encode($result->fetch_all(MYSQLI_ASSOC));
@@ -57,10 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 elseif ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT') {
     $input = file_get_contents("php://input");
     $data = json_decode($input, true);
-
-    if (empty($data)) {
-        die(json_encode(["error" => "Keine Daten übergeben. JSON im Body erwartet."]));
-    }
+    if (empty($data)) die(json_encode(["error" => "Keine Daten übergeben. JSON im Body erwartet."]));
 
     $isArray = isset($data[0]) && is_array($data[0]);
     $entries = $isArray ? $data : [$data];
@@ -69,11 +62,11 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 
     foreach ($entries as $entry) {
         // --- Validierung ---
         foreach ($entry as $key => $value) {
-            if (in_array($key, $allowedColumns) && $value !== null) {
+            if (in_array($key, $GLOBALS['allowedColumns']) && $value !== null) {
                 $err = validateField($key, $value);
                 if ($err) {
                     $results[] = ["error" => $err, "id_lehrbetrieb" => $entry['id_lehrbetrieb'] ?? null];
-                    continue 2; // überspringt diesen Eintrag
+                    continue 2;
                 }
             }
         }
@@ -90,38 +83,18 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 
     exit;
 }
 
-// --- DELETE ---
+// --- DELETE nur nach ID ---
 elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-    $input = file_get_contents("php://input");
-    $data = json_decode($input, true);
-    if (empty($data)) $data = $_GET;
+    $id = $_GET['id_lehrbetrieb'] ?? null;
 
-    if (empty($data) || !is_array($data)) {
-        die(json_encode(["error" => "Keine Löschbedingungen übergeben."]));
+    if (!$id) {
+        die(json_encode(["error" => "Für DELETE muss 'id_lehrbetrieb' als Parameter übergeben werden."]));
     }
 
-    $sql = "DELETE FROM tbl_lehrbetriebe WHERE 1=1";
-    $params = [];
-    $types = "";
-    foreach ($data as $key => $value) {
-        if (in_array($key, $allowedColumns)) {
-            $sql .= " AND `$key` = ?";
-            $params[] = $value;
-            $types .= "s";
-        }
-    }
-
-    if (count($params) === 0) {
-        die(json_encode(["error" => "Keine gültigen Bedingungen zum Löschen angegeben."]));
-    }
-
-    $stmt = $mysqli->prepare($sql);
+    $stmt = $mysqli->prepare("DELETE FROM tbl_lehrbetriebe WHERE id_lehrbetrieb = ?");
     if (!$stmt) die(json_encode(["error" => "Fehler bei prepare: " . $mysqli->error]));
 
-    $bindNames = [&$types];
-    foreach ($params as $i => &$p) $bindNames[] = &$p;
-    call_user_func_array([$stmt, 'bind_param'], $bindNames);
-
+    $stmt->bind_param("i", $id);
     $stmt->execute();
     echo json_encode(["success" => true, "affected_rows" => $stmt->affected_rows]);
     $stmt->close();
@@ -164,9 +137,7 @@ function insertOrUpdate($data, $mysqli, $allowedColumns) {
 }
 
 function updateRecord($data, $mysqli, $allowedColumns) {
-    if (!isset($data['id_lehrbetrieb'])) {
-        return ["error" => "id_lehrbetrieb wird für Update benötigt."];
-    }
+    if (!isset($data['id_lehrbetrieb'])) return ["error" => "id_lehrbetrieb wird für Update benötigt."];
 
     $id = $data['id_lehrbetrieb'];
     unset($data['id_lehrbetrieb']);

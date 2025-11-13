@@ -7,7 +7,8 @@ if ($mysqli->connect_error) {
     die(json_encode(["error" => "Verbindung fehlgeschlagen: " . $mysqli->connect_error]));
 }
 
-$allowedColumns = ['id_lernende', 'vorname', 'nachname', 'strasse', 'plz', 'ort', 'nr_land', 'geschlecht', 'telefon', 'handy', 'email', 'email_privat', 'birthdate'];
+$allowedColumns = ['id_lernende', 'vorname', 'nachname', 'strasse', 'plz', 'ort', 'nr_land', 'geschlecht', 'telefon', 'handy', 'email', 'email_privat', 'birthdate'
+];
 
 // --- Validierung Funktion ---
 function validateField($key, $value) {
@@ -23,15 +24,13 @@ function validateField($key, $value) {
             }
             break;
         case 'telefon':
-            // Festnetz: Schweiz, 0XXX XXXXXXX, nur Zahlen und Leerzeichen
             if (!preg_match('/^\d{2,4}\s?\d{5,7}$/', $value)) {
                 return "Ungültige Telefonnummer: '$value'. Erwartet wird z.B. '0312234567'";
             }
             break;
         case 'handy':
-            // Mobilnummer: Schweiz, 07XX XXXXXXX
-            if (!preg_match('/^07\d{2}\s?\d{6,7}$/', $value)) {
-                return "Ungültige Handynummer: '$value'. Erwartet wird z.B. '0787654321'";
+            if (!preg_match('/^\d{2,4}\s?\d{5,7}$/', $value)) {
+                return "Ungültige Telefonnummer: '$value'. Erwartet wird z.B. '0312234567'";
             }
             break;
         case 'plz':
@@ -46,14 +45,13 @@ function validateField($key, $value) {
             }
             break;
         case 'geschlecht':
-            if (!in_array($value, ['m','w','d',''])) {
+            if (!in_array($value, ['m', 'w', 'd', ''])) {
                 return "Ungültiges Geschlecht: '$value'. Erwartet wird 'm', 'w' oder 'd'";
             }
             break;
         case 'nr_land':
-            // Nur positive ganze Zahlen erlaubt
             if (!is_numeric($value) || intval($value) != $value || $value < 0) {
-                return "Ungültige Länder-Nummer: '$value'. Erwartet wird eine ganze Zahl, z.B. 1 für Schweiz";
+                return "Ungültige Länder-Nummer: '$value'. Erwartet wird eine ganze Zahl, z.B. 1 für Schweiz.";
             }
             break;
     }
@@ -62,104 +60,110 @@ function validateField($key, $value) {
 
 // --- GET ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $sql = "SELECT * FROM tbl_lernende WHERE 1=1";
-    $params = [];
-    $types = "";
-
     foreach ($_GET as $key => $value) {
-        if (in_array($key, $allowedColumns)) {
-            $sql .= " AND `$key` = ?";
-            $params[] = $value;
-            $types .= "s";
+        if ($key !== 'id_lernende') {
+            die(json_encode(["error" => "Ungültiger Parameter '$key'. Nur 'id_lernende' darf in der URL verwendet werden."]));
         }
     }
 
-    $stmt = $mysqli->prepare($sql);
-    if (!$stmt) die(json_encode(["error" => "Fehler bei prepare: " . $mysqli->error]));
-
-    if ($params) {
-        $bindNames = [&$types];
-        foreach ($params as $i => &$p) $bindNames[] = &$p;
-        call_user_func_array([$stmt, 'bind_param'], $bindNames);
+    $sql = "SELECT * FROM tbl_lernende";
+    if (isset($_GET['id_lernende'])) {
+        $sql .= " WHERE id_lernende = ?";
+        $stmt = $mysqli->prepare($sql);
+        $stmt->bind_param("i", $_GET['id_lernende']);
+    } else {
+        $stmt = $mysqli->prepare($sql);
     }
 
+    if (!$stmt) die(json_encode(["error" => "Fehler bei prepare: " . $mysqli->error]));
     $stmt->execute();
-    $result = $stmt->get_result();
-    echo json_encode($result->fetch_all(MYSQLI_ASSOC));
+    $res = $stmt->get_result();
+    echo json_encode($res->fetch_all(MYSQLI_ASSOC));
     $stmt->close();
     $mysqli->close();
     exit;
 }
 
-// --- POST / PUT ---
-elseif ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT') {
-    $input = file_get_contents("php://input");
-    $data = json_decode($input, true);
+// --- POST ---
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (empty($data)) die(json_encode(["error" => "Keine Daten übergeben. JSON im Body erwartet."]));
 
-    if (empty($data)) {
-        die(json_encode(["error" => "Keine Daten übergeben. JSON im Body erwartet."]));
-    }
-
-    $isArray = isset($data[0]) && is_array($data[0]);
-    $entries = $isArray ? $data : [$data];
-    $results = [];
-
-    foreach ($entries as $entry) {
-        // --- Validierung ---
-        foreach ($entry as $key => $value) {
-            if (in_array($key, $allowedColumns) && $value !== null) {
-                $err = validateField($key, $value);
-                if ($err) {
-                    $results[] = ["error" => $err, "id_lernende" => $entry['id_lernende'] ?? null];
-                    continue 2; // überspringt diesen Eintrag
-                }
-            }
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $results[] = insertOrUpdate($entry, $mysqli, $allowedColumns);
-        } else {
-            $results[] = updateRecord($entry, $mysqli, $allowedColumns);
+    $errors = [];
+    foreach ($data as $key => $val) {
+        if (in_array($key, $allowedColumns) && $val !== null) {
+            $err = validateField($key, $val);
+            if ($err) $errors[] = $err;
         }
     }
+    if ($errors) die(json_encode(["error" => $errors]));
 
-    echo json_encode($isArray ? $results : $results[0]);
-    $mysqli->close();
-    exit;
-}
-
-// --- DELETE ---
-elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-    $input = file_get_contents("php://input");
-    $data = json_decode($input, true);
-    if (empty($data)) $data = $_GET;
-
-    if (empty($data) || !is_array($data)) {
-        die(json_encode(["error" => "Keine Löschbedingungen übergeben."]));
-    }
-
-    $sql = "DELETE FROM tbl_lernende WHERE 1=1";
-    $params = [];
+    $cols = $vals = [];
     $types = "";
-    foreach ($data as $key => $value) {
-        if (in_array($key, $allowedColumns)) {
-            $sql .= " AND `$key` = ?";
-            $params[] = $value;
+    foreach ($data as $key => $val) {
+        if (in_array($key, $allowedColumns) && $key !== 'id_lernende') {
+            $cols[] = "`$key`";
+            $vals[] = "?";
             $types .= "s";
         }
     }
 
-    if (count($params) === 0) {
-        die(json_encode(["error" => "Keine gültigen Bedingungen zum Löschen angegeben."]));
+    if (empty($cols)) die(json_encode(["error" => "Keine gültigen Felder für INSERT angegeben."]));
+
+    $sql = "INSERT INTO tbl_lernende (" . implode(",", $cols) . ") VALUES (" . implode(",", $vals) . ")";
+    $stmt = $mysqli->prepare($sql);
+    $bind = [&$types];
+    foreach ($data as $key => &$val) {
+        if (in_array($key, $allowedColumns) && $key !== 'id_lernende') $bind[] = &$val;
+    }
+    call_user_func_array([$stmt, 'bind_param'], $bind);
+    $stmt->execute();
+    echo json_encode(["success" => true, "id_lernende" => $stmt->insert_id]);
+    $stmt->close();
+    $mysqli->close();
+    exit;
+}
+
+// --- PUT ---
+elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (empty($data) || empty($data['id_lernende'])) {
+        die(json_encode(["error" => "id_lernende wird für Update benötigt."]));
     }
 
+    $errors = [];
+    foreach ($data as $key => $val) {
+        if (in_array($key, $allowedColumns) && $val !== null) {
+            $err = validateField($key, $val);
+            if ($err) $errors[] = $err;
+        }
+    }
+    if ($errors) die(json_encode(["error" => $errors]));
+
+    $id = $data['id_lernende'];
+    unset($data['id_lernende']);
+
+    $set = [];
+    $types = "";
+    $params = [];
+    foreach ($data as $key => $val) {
+        if (in_array($key, $allowedColumns)) {
+            $set[] = "`$key` = ?";
+            $types .= "s";
+            $params[] = $val;
+        }
+    }
+
+    if (empty($set)) die(json_encode(["error" => "Keine gültigen Felder zum Aktualisieren angegeben."]));
+
+    $sql = "UPDATE tbl_lernende SET " . implode(", ", $set) . " WHERE id_lernende = ?";
+    $types .= "i";
+    $params[] = $id;
+
     $stmt = $mysqli->prepare($sql);
-    if (!$stmt) die(json_encode(["error" => "Fehler bei prepare: " . $mysqli->error]));
-
-    $bindNames = [&$types];
-    foreach ($params as $i => &$p) $bindNames[] = &$p;
-    call_user_func_array([$stmt, 'bind_param'], $bindNames);
-
+    $bind = [&$types];
+    foreach ($params as &$p) $bind[] = &$p;
+    call_user_func_array([$stmt, 'bind_param'], $bind);
     $stmt->execute();
     echo json_encode(["success" => true, "affected_rows" => $stmt->affected_rows]);
     $stmt->close();
@@ -167,76 +171,20 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     exit;
 }
 
-// --- Funktionen ---
-function insertOrUpdate($data, $mysqli, $allowedColumns) {
-    if (isset($data['id_lernende'])) {
-        return updateRecord($data, $mysqli, $allowedColumns);
-    }
+// --- DELETE ---
+elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (empty($data)) $data = $_GET;
 
-    $columns = $placeholders = $params = [];
-    $types = "";
+    if (empty($data['id_lernende'])) die(json_encode(["error" => "Bitte 'id_lernende' angeben."]));
+    if (count($data) > 1) die(json_encode(["error" => "Nur 'id_lernende' darf übergeben werden."]));
 
-    foreach ($data as $key => $value) {
-        if (in_array($key, $allowedColumns)) {
-            $columns[] = "`$key`";
-            $placeholders[] = "?";
-            $params[] = $value;
-            $types .= "s";
-        }
-    }
-
-    if (count($columns) === 0) return ["error" => "Keine gültigen Felder zum Einfügen angegeben."];
-
-    $sql = "INSERT INTO tbl_lernende (" . implode(",", $columns) . ") VALUES (" . implode(",", $placeholders) . ")";
-    $stmt = $mysqli->prepare($sql);
-    if (!$stmt) return ["error" => "Fehler bei prepare: " . $mysqli->error];
-
-    $bindNames = [&$types];
-    foreach ($params as $i => &$p) $bindNames[] = &$p;
-    call_user_func_array([$stmt, 'bind_param'], $bindNames);
-
+    $stmt = $mysqli->prepare("DELETE FROM tbl_lernende WHERE id_lernende = ?");
+    $stmt->bind_param("i", $data['id_lernende']);
     $stmt->execute();
-    $insertId = $stmt->insert_id;
+    echo json_encode(["success" => true, "affected_rows" => $stmt->affected_rows]);
     $stmt->close();
-    return ["success" => true, "id_lernende" => $insertId];
-}
-
-function updateRecord($data, $mysqli, $allowedColumns) {
-    if (!isset($data['id_lernende'])) {
-        return ["error" => "id_lernende wird für Update benötigt."];
-    }
-
-    $id = $data['id_lernende'];
-    unset($data['id_lernende']);
-
-    $sql = "UPDATE tbl_lernende SET ";
-    $params = $set = [];
-    $types = "";
-
-    foreach ($data as $key => $value) {
-        if (in_array($key, $allowedColumns)) {
-            $set[] = "`$key` = ?";
-            $params[] = $value;
-            $types .= "s";
-        }
-    }
-
-    if (count($set) === 0) return ["error" => "Keine gültigen Felder zum Aktualisieren angegeben."];
-
-    $sql .= implode(", ", $set) . " WHERE `id_lernende` = ?";
-    $params[] = $id;
-    $types .= "i";
-
-    $stmt = $mysqli->prepare($sql);
-    if (!$stmt) return ["error" => "Fehler bei prepare: " . $mysqli->error];
-
-    $bindNames = [&$types];
-    foreach ($params as $i => &$p) $bindNames[] = &$p;
-    call_user_func_array([$stmt, 'bind_param'], $bindNames);
-
-    $stmt->execute();
-    $affected = $stmt->affected_rows;
-    $stmt->close();
-    return ["success" => true, "affected_rows" => $affected, "id_lernende" => $id];
+    $mysqli->close();
+    exit;
 }
 ?>
