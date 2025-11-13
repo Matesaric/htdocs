@@ -50,6 +50,12 @@ function validateField($key, $value) {
                 return "Ungültiges Geschlecht: '$value'. Erwartet wird 'm', 'w' oder 'd'";
             }
             break;
+        case 'nr_land':
+            // Nur positive ganze Zahlen erlaubt
+            if (!is_numeric($value) || intval($value) != $value || $value < 0) {
+                return "Ungültige Länder-Nummer: '$value'. Erwartet wird eine ganze Zahl, z.B. 1 für Schweiz";
+            }
+            break;
     }
     return null;
 }
