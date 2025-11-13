@@ -14,7 +14,7 @@ $allowedColumns = ['id_lehrbetrieb', 'firma', 'strasse', 'plz', 'ort'];
 function validateField($key, $value) {
     switch ($key) {
         case 'plz':
-            if (!empty($value) && !preg_match('/^\d{4,10}$/', $value)) {
+            if (!preg_match('/^\d{4}$/', $value)) {
                 return "Ungültige PLZ: '$value'. Erwartet wird 4-stellig, z.B. '9000'";
             }
             break;
