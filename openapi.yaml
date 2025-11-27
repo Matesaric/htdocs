@@ -1,0 +1,984 @@
+openapi: 3.0.3
+info:
+  title: Kursverwaltung Backend API
+  version: "1.0.0"
+  description: RESTful Backend für eine Kursverwaltung
+
+servers:
+  - url: http://localhost
+
+tags:
+  - name: Laender
+    description: Verwaltung der Länder
+  - name: Lehrbetriebe
+    description: Verwaltung der Lehrbetriebe
+
+paths:
+  /laender.php:
+    get:
+      tags: [Laender]
+      summary: Länder lesen
+      description: Liefert ein Land (`id_country`) oder alle Länder (`all`).
+      parameters:
+        - in: query
+          name: id_country
+          schema:
+            type: integer
+          example: 1
+        - in: query
+          name: all
+          schema:
+            type: string
+            example: all
+      responses:
+        "200":
+          description: Land oder Liste von Ländern
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Country'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Country'
+    post:
+      tags: [Laender]
+      summary: Land erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CountryCreate'
+            example:
+              country: Schweiz
+      responses:
+        "201":
+          description: Land erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+    put:
+      tags: [Laender]
+      summary: Land aktualisieren
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CountryUpdate'
+            example:
+              id_country: 1
+              country: Schweiz
+      responses:
+        "200":
+          description: Land erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateResponse'
+    delete:
+      tags: [Laender]
+      summary: Land löschen
+      parameters:
+        - in: query
+          name: id_country
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Land gelöscht
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+
+  /lehrbetriebe.php:
+    get:
+      tags: [Lehrbetriebe]
+      summary: Lehrbetriebe lesen
+      parameters:
+        - in: query
+          name: id_lehrbetrieb
+          schema:
+            type: integer
+          example: 1
+        - in: query
+          name: all
+          schema:
+            type: string
+            example: all
+      responses:
+        "200":
+          description: Lehrbetrieb oder Liste von Lehrbetrieben
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Lehrbetrieb'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Lehrbetrieb'
+    post:
+      tags: [Lehrbetriebe]
+      summary: Lehrbetrieb erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LehrbetriebCreate'
+            example:
+              firma: "Musterfirma AG"
+              strasse: "Hauptstrasse 1"
+              plz: "8000"
+              ort: "Zürich"
+      responses:
+        "201":
+          description: Lehrbetrieb erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+              example:
+                success: true
+                id: 1
+    put:
+      tags: [Lehrbetriebe]
+      summary: Lehrbetrieb aktualisieren
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LehrbetriebUpdate'
+            example:
+              id_lehrbetrieb: 1
+              firma: "Musterfirma AG"
+              strasse: "Hauptstrasse 1"
+              plz: "8000"
+              ort: "Zürich"
+      responses:
+        "200":
+          description: Lehrbetrieb erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateResponse'
+              example:
+                success: true
+                affected_rows: 1
+                id: 1
+    delete:
+      tags: [Lehrbetriebe]
+      summary: Lehrbetrieb löschen
+      parameters:
+        - in: query
+          name: id_lehrbetrieb
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Lehrbetrieb gelöscht
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              example:
+                success: true
+                affected_rows: 1
+  /lernende.php:
+    get:
+      tags: [Lernende]
+      summary: Lernende lesen
+      description: Liefert einen Lernenden (`id_lernende`) oder alle Einträge (`all`).
+      parameters:
+        - in: query
+          name: id_lernende
+          schema:
+            type: integer
+          example: 1
+          description: Primärschlüssel des Lernenden
+        - in: query
+          name: all
+          schema:
+            type: string
+          example: all
+          description: Wenn gesetzt (`all`), werden alle Lernenden zurückgegeben
+      responses:
+        "200":
+          description: Lernender oder Liste von Lernenden
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Lernende'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Lernende'
+              examples:
+                single:
+                  summary: Einzelner Lernender
+                  value:
+                    id_lernende: 1
+                    vorname: "Max"
+                    nachname: "Muster"
+                    email: "max.muster@example.com"
+                    strasse: "Hauptstr. 1"
+                    plz: "8000"
+                    ort: "Zürich"
+                    nr_land: 1
+                    geschlecht: "m"
+                    telefon: "0123456789"
+                    handy: "0791234567"
+                    email_privat: "max.privat@example.com"
+                    birthdate: "2000-01-01"
+                all:
+                  summary: Alle Lernenden
+                  value:
+                    - id_lernende: 1
+                      vorname: "Max"
+                      nachname: "Muster"
+                      email: "max.muster@example.com"
+                      strasse: "Hauptstr. 1"
+                      plz: "8000"
+                      ort: "Zürich"
+                      nr_land: 1
+                      geschlecht: "m"
+                      telefon: "0123456789"
+                      handy: "0791234567"
+                      email_privat: "max.privat@example.com"
+                      birthdate: "2000-01-01"
+                    - id_lernende: 2
+                      vorname: "Anna"
+                      nachname: "Beispiel"
+                      email: "anna.beispiel@example.com"
+                      strasse: "Bahnhofstr. 5"
+                      plz: "3000"
+                      ort: "Bern"
+                      nr_land: 2
+                      geschlecht: "w"
+                      telefon: "0312345678"
+                      handy: "0799876543"
+                      email_privat: "anna.privat@example.com"
+                      birthdate: "2001-05-15"
+    post:
+      tags: [Lernende]
+      summary: Lernenden erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LernendeCreate'
+            example:
+              vorname: "Lena"
+              nachname: "Neu"
+              email: "lena.neu@example.com"
+              strasse: "Beispielstr. 10"
+              plz: "4000"
+              ort: "Basel"
+              nr_land: 1
+              geschlecht: "w"
+              telefon: "0123456789"
+              handy: "0791234567"
+              email_privat: "lena.privat@example.com"
+              birthdate: "2002-07-20"
+      responses:
+        "201":
+          description: Lernender erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+              example:
+                success: true
+                id: 3
+    put:
+      tags: [Lernende]
+      summary: Lernenden aktualisieren
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LernendeUpdate'
+            example:
+              id_lernende: 1
+              vorname: "Max"
+              nachname: "Muster"
+              email: "max.muster@neu.com"
+              strasse: "Neue Str. 2"
+              plz: "8001"
+              ort: "Zürich"
+              nr_land: 1
+              geschlecht: "m"
+              telefon: "0123456789"
+              handy: "0791234567"
+              email_privat: "max.privat@neu.com"
+              birthdate: "2000-01-01"
+      responses:
+        "200":
+          description: Lernender erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateResponse'
+              example:
+                success: true
+                affected_rows: 1
+                id: 1
+    delete:
+      tags: [Lernende]
+      summary: Lernenden löschen
+      parameters:
+        - in: query
+          name: id_lernende
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Lernender gelöscht
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              example:
+                success: true
+                affected_rows: 1
+  /dozenten.php:
+    get:
+      tags: [Dozenten]
+      summary: Dozenten lesen
+      description: Liefert einen Dozenten (`id_dozent`) oder alle (`all`).
+      parameters:
+        - in: query
+          name: id_dozent
+          schema:
+            type: integer
+          example: 1
+          description: Primärschlüssel des Dozenten
+        - in: query
+          name: all
+          schema:
+            type: string
+          example: all
+          description: Wenn gesetzt (`all`), werden alle Dozenten zurückgegeben
+      responses:
+        "200":
+          description: Dozent oder Liste von Dozenten
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Dozent'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Dozent'
+              examples:
+                single:
+                  summary: Einzelner Dozent
+                  value:
+                    id_dozent: 1
+                    vorname: "Peter"
+                    nachname: "Meier"
+                    strasse: "Hauptstr. 3"
+                    plz: "8000"
+                    ort: "Zürich"
+                    nr_land: 1
+                    geschlecht: "m"
+                    telefon: "0123456789"
+                    handy: "0791234567"
+                    email: "peter.meier@example.com"
+                    birthdate: "1980-05-10"
+                all:
+                  summary: Alle Dozenten
+                  value:
+                    - id_dozent: 1
+                      vorname: "Peter"
+                      nachname: "Meier"
+                      strasse: "Hauptstr. 3"
+                      plz: "8000"
+                      ort: "Zürich"
+                      nr_land: 1
+                      geschlecht: "m"
+                      telefon: "0123456789"
+                      handy: "0791234567"
+                      email: "peter.meier@example.com"
+                      birthdate: "1980-05-10"
+                    - id_dozent: 2
+                      vorname: "Sabine"
+                      nachname: "Keller"
+                      strasse: "Bahnhofstr. 8"
+                      plz: "3000"
+                      ort: "Bern"
+                      nr_land: 1
+                      geschlecht: "w"
+                      telefon: "0312345678"
+                      handy: "0799876543"
+                      email: "sabine.keller@example.com"
+                      birthdate: "1975-11-20"
+    post:
+      tags: [Dozenten]
+      summary: Dozenten erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DozentCreate'
+            example:
+              vorname: "Laura"
+              nachname: "Fischer"
+              strasse: "Beispielstr. 10"
+              plz: "4000"
+              ort: "Basel"
+              nr_land: 1
+              geschlecht: "w"
+              telefon: "0123456789"
+              handy: "0791234567"
+              email: "laura.fischer@example.com"
+              birthdate: "1985-02-15"
+      responses:
+        "201":
+          description: Dozent erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+              example:
+                success: true
+                id: 3
+    put:
+      tags: [Dozenten]
+      summary: Dozenten aktualisieren
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DozentUpdate'
+            example:
+              id_dozent: 1
+              vorname: "Peter"
+              nachname: "Meier"
+              strasse: "Neue Str. 5"
+              plz: "8001"
+              ort: "Zürich"
+              nr_land: 1
+              geschlecht: "m"
+              telefon: "0123456789"
+              handy: "0791234567"
+              email: "peter.meier@neu.com"
+              birthdate: "1980-05-10"
+      responses:
+        "200":
+          description: Dozent erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateResponse'
+              example:
+                success: true
+                affected_rows: 1
+                id: 1
+    delete:
+      tags: [Dozenten]
+      summary: Dozenten löschen
+      parameters:
+        - in: query
+          name: id_dozent
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Dozent gelöscht
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              example:
+                success: true
+                affected_rows: 1
+  /kurse.php:
+    get:
+      tags: [Kurse]
+      summary: Kurse lesen
+      description: Liefert einen Kurs (`id_kurs`) oder alle (`all`).
+      parameters:
+        - in: query
+          name: id_kurs
+          schema:
+            type: integer
+          example: 1
+          description: Primärschlüssel des Kurses
+        - in: query
+          name: all
+          schema:
+            type: string
+          example: all
+          description: Wenn gesetzt (`all`), werden alle Kurse zurückgegeben
+      responses:
+        "200":
+          description: Kurs oder Liste von Kursen
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Kurs'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Kurs'
+              examples:
+                single:
+                  value:
+                    id_kurs: 1
+                    kursnummer: "K101"
+                    kursthema: "Mathematik"
+                    inhalt: "Algebra, Geometrie"
+                    nr_dozent: 1
+                    startdatum: "2025-01-15"
+                    enddatum: "2025-03-15"
+                    dauer: 60
+                all:
+                  value:
+                    - id_kurs: 1
+                      kursnummer: "K101"
+                      kursthema: "Mathematik"
+                      inhalt: "Algebra, Geometrie"
+                      nr_dozent: 1
+                      startdatum: "2025-01-15"
+                      enddatum: "2025-03-15"
+                      dauer: 60
+                    - id_kurs: 2
+                      kursnummer: "K102"
+                      kursthema: "Physik"
+                      inhalt: "Mechanik, Thermodynamik"
+                      nr_dozent: 2
+                      startdatum: "2025-02-01"
+                      enddatum: "2025-04-01"
+                      dauer: 60
+    post:
+      tags: [Kurse]
+      summary: Kurs erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KursCreate'
+            example:
+              kursnummer: "K103"
+              kursthema: "Informatik"
+              inhalt: "Programmieren, Datenbanken"
+              nr_dozent: 1
+              startdatum: "2025-05-01"
+              enddatum: "2025-07-01"
+              dauer: 60
+      responses:
+        "201":
+          description: Kurs erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+              example:
+                success: true
+                id: 3
+    put:
+      tags: [Kurse]
+      summary: Kurs aktualisieren
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KursUpdate'
+            example:
+              id_kurs: 1
+              kursnummer: "K101"
+              kursthema: "Mathematik - Grundlagen"
+              inhalt: "Algebra, Geometrie, Statistik"
+              nr_dozent: 1
+              startdatum: "2025-01-15"
+              enddatum: "2025-03-20"
+              dauer: 65
+      responses:
+        "200":
+          description: Kurs erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateResponse'
+              example:
+                success: true
+                affected_rows: 1
+                id: 1
+    delete:
+      tags: [Kurse]
+      summary: Kurs löschen
+      parameters:
+        - in: query
+          name: id_kurs
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Kurs gelöscht
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              example:
+                success: true
+                affected_rows: 1
+  /kurse_lernende.php:
+    get:
+      tags: [KurseLernende]
+      summary: Kurs–Lernende Zuordnungen lesen
+      description: Liefert eine Zuordnung (`id_kurse_lernende`) oder alle (`all`).
+      parameters:
+        - in: query
+          name: id_kurse_lernende
+          schema:
+            type: integer
+          example: 1
+        - in: query
+          name: all
+          schema:
+            type: string
+          example: all
+      responses:
+        "200":
+          description: Zuordnung oder Liste von Zuordnungen
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/KursLernende'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/KursLernende'
+              examples:
+                single:
+                  value:
+                    id_kurse_lernende: 1
+                    nr_kurs: 1
+                    nr_lernende: 2
+                    note: 5.5
+                all:
+                  value:
+                    - id_kurse_lernende: 1
+                      nr_kurs: 1
+                      nr_lernende: 2
+                      note: 5.5
+                    - id_kurse_lernende: 2
+                      nr_kurs: 2
+                      nr_lernende: 1
+                      note: 4.0
+    post:
+      tags: [KurseLernende]
+      summary: Kurs–Lernende Zuordnung erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KursLernendeCreate'
+            example:
+              nr_kurs: 1
+              nr_lernende: 3
+              note: 5.0
+      responses:
+        "201":
+          description: Zuordnung erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+              example:
+                success: true
+                id: 3
+    put:
+      tags: [KurseLernende]
+      summary: Kurs–Lernende Zuordnung aktualisieren
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KursLernendeUpdate'
+            example:
+              id_kurse_lernende: 1
+              nr_kurs: 1
+              nr_lernende: 2
+              note: 6.0
+      responses:
+        "200":
+          description: Zuordnung erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateResponse'
+              example:
+                success: true
+                affected_rows: 1
+                id: 1
+    delete:
+      tags: [KurseLernende]
+      summary: Kurs–Lernende Zuordnung löschen
+      parameters:
+        - in: query
+          name: id_kurse_lernende
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Zuordnung gelöscht
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              example:
+                success: true
+                affected_rows: 1
+  /lehrbetrieb_lernende.php:
+    get:
+      tags: [LehrbetriebeLernende]
+      summary: Lehrbetrieb–Lernende Zuordnungen lesen
+      description: Liefert eine Zuordnung (`id_lehrbetriebe_lernende`) oder alle (`all`).
+      parameters:
+        - in: query
+          name: id_lehrbetriebe_lernende
+          schema:
+            type: integer
+          example: 1
+        - in: query
+          name: all
+          schema:
+            type: string
+          example: all
+      responses:
+        "200":
+          description: Zuordnung oder Liste von Zuordnungen
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LehrbetriebLernende'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/LehrbetriebLernende'
+              examples:
+                single:
+                  value:
+                    id_lehrbetriebe_lernende: 1
+                    nr_lehrbetrieb: 1
+                    nr_lernende: 2
+                    start: "2025-01-01"
+                    ende: "2025-12-31"
+                    beruf: "Kaufmann"
+                all:
+                  value:
+                    - id_lehrbetriebe_lernende: 1
+                      nr_lehrbetrieb: 1
+                      nr_lernende: 2
+                      start: "2025-01-01"
+                      ende: "2025-12-31"
+                      beruf: "Kaufmann"
+                    - id_lehrbetriebe_lernende: 2
+                      nr_lehrbetrieb: 2
+                      nr_lernende: 3
+                      start: "2025-02-01"
+                      ende: "2025-11-30"
+                      beruf: "Polymechaniker"
+    post:
+      tags: [LehrbetriebeLernende]
+      summary: Lehrbetrieb–Lernende Zuordnung erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LehrbetriebLernendeCreate'
+            example:
+              nr_lehrbetrieb: 2
+              nr_lernende: 4
+              start: "2025-03-01"
+              ende: "2025-12-31"
+              beruf: "Informatiker"
+      responses:
+        "201":
+          description: Zuordnung erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+              example:
+                success: true
+                id: 3
+    put:
+      tags: [LehrbetriebeLernende]
+      summary: Lehrbetrieb–Lernende Zuordnung aktualisieren
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LehrbetriebLernendeUpdate'
+            example:
+              id_lehrbetriebe_lernende: 1
+              nr_lehrbetrieb: 1
+              nr_lernende: 2
+              start: "2025-01-01"
+              ende: "2025-12-31"
+              beruf: "Kaufmann EFZ"
+      responses:
+        "200":
+          description: Zuordnung erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateResponse'
+              example:
+                success: true
+                affected_rows: 1
+                id: 1
+    delete:
+      tags: [LehrbetriebeLernende]
+      summary: Lehrbetrieb–Lernende Zuordnung löschen
+      parameters:
+        - in: query
+          name: id_lehrbetriebe_lernende
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Zuordnung gelöscht
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              example:
+                success: true
+                affected_rows: 1
+components:
+  schemas:
+    Country:
+      type: object
+      properties:
+        id_country:
+          type: integer
+          example: 1
+        country:
+          type: string
+          example: Schweiz
+    CountryCreate:
+      type: object
+      required:
+        - country
+      properties:
+        country:
+          type: string
+    CountryUpdate:
+      type: object
+      required:
+        - id_country
+        - country
+      properties:
+        id_country:
+          type: integer
+        country:
+          type: string
+    Lehrbetrieb:
+      type: object
+      properties:
+        id_lehrbetrieb:
+          type: integer
+          example: 1
+        firma:
+          type: string
+          example: Musterfirma AG
+        strasse:
+          type: string
+          example: Hauptstrasse 1
+        plz:
+          type: string
+          example: 8000
+        ort:
+          type: string
+          example: Zürich
+    LehrbetriebCreate:
+      type: object
+      required:
+        - firma
+      properties:
+        firma:
+          type: string
+        strasse:
+          type: string
+        plz:
+          type: string
+        ort:
+          type: string
+    LehrbetriebUpdate:
+      type: object
+      required:
+        - id_lehrbetrieb
+        - firma
+      properties:
+        id_lehrbetrieb:
+          type: integer
+        firma:
+          type: string
+        strasse:
+          type: string
+        plz:
+          type: string
+        ort:
+          type: string
+    CreateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        id:
+          type: integer
+          example: 5
+    UpdateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        affected_rows:
+          type: integer
+          example: 1
+        id:
+          type: integer
+          example: 1
+    DeleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        affected_rows:
+          type: integer
+          example: 1
