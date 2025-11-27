@@ -982,3 +982,385 @@ components:
         affected_rows:
           type: integer
           example: 1
+    Lernende:
+      type: object
+      properties:
+        id_lernende:
+          type: integer
+          example: 1
+        vorname:
+          type: string
+          example: Max
+        nachname:
+          type: string
+          example: Muster
+        email:
+          type: string
+          example: max.muster@example.com
+        strasse:
+          type: string
+          example: Hauptstr. 1
+        plz:
+          type: string
+          example: 8000
+        ort:
+          type: string
+          example: Zürich
+        nr_land:
+          type: integer
+          example: 1
+        geschlecht:
+          type: string
+          example: m
+        telefon:
+          type: string
+          example: 0123456789
+        handy:
+          type: string
+          example: 0791234567
+        email_privat:
+          type: string
+          example: max.privat@example.com
+        birthdate:
+          type: string
+          format: date
+          example: 2000-01-01
+    LernendeCreate:
+      type: object
+      required:
+        - vorname
+        - nachname
+      properties:
+        vorname:
+          type: string
+        nachname:
+          type: string
+        email:
+          type: string
+        strasse:
+          type: string
+        plz:
+          type: string
+        ort:
+          type: string
+        nr_land:
+          type: integer
+        geschlecht:
+          type: string
+        telefon:
+          type: string
+        handy:
+          type: string
+        email_privat:
+          type: string
+        birthdate:
+          type: string
+          format: date
+    LernendeUpdate:
+      type: object
+      required:
+        - id_lernende
+      properties:
+        id_lernende:
+          type: integer
+        vorname:
+          type: string
+        nachname:
+          type: string
+        email:
+          type: string
+        strasse:
+          type: string
+        plz:
+          type: string
+        ort:
+          type: string
+        nr_land:
+          type: integer
+        geschlecht:
+          type: string
+        telefon:
+          type: string
+        handy:
+          type: string
+        email_privat:
+          type: string
+        birthdate:
+          type: string
+          format: date
+    Dozent:
+      type: object
+      properties:
+        id_dozent:
+          type: integer
+          example: 1
+        vorname:
+          type: string
+          example: Peter
+        nachname:
+          type: string
+          example: Meier
+        strasse:
+          type: string
+          example: Hauptstr. 3
+        plz:
+          type: string
+          example: 8000
+        ort:
+          type: string
+          example: Zürich
+        nr_land:
+          type: integer
+          example: 1
+        geschlecht:
+          type: string
+          example: m
+        telefon:
+          type: string
+          example: 0123456789
+        handy:
+          type: string
+          example: 0791234567
+        email:
+          type: string
+          example: peter.meier@example.com
+        birthdate:
+          type: string
+          format: date
+          example: 1980-05-10
+    DozentCreate:
+      type: object
+      required:
+        - vorname
+        - nachname
+      properties:
+        vorname:
+          type: string
+        nachname:
+          type: string
+        strasse:
+          type: string
+        plz:
+          type: string
+        ort:
+          type: string
+        nr_land:
+          type: integer
+        geschlecht:
+          type: string
+        telefon:
+          type: string
+        handy:
+          type: string
+        email:
+          type: string
+        birthdate:
+          type: string
+          format: date
+    DozentUpdate:
+      type: object
+      required:
+        - id_dozent
+      properties:
+        id_dozent:
+          type: integer
+        vorname:
+          type: string
+        nachname:
+          type: string
+        strasse:
+          type: string
+        plz:
+          type: string
+        ort:
+          type: string
+        nr_land:
+          type: integer
+        geschlecht:
+          type: string
+        telefon:
+          type: string
+        handy:
+          type: string
+        email:
+          type: string
+        birthdate:
+          type: string
+          format: date
+    Kurs:
+      type: object
+      properties:
+        id_kurs:
+          type: integer
+          example: 1
+        kursnummer:
+          type: string
+          example: K101
+        kursthema:
+          type: string
+          example: Mathematik
+        inhalt:
+          type: string
+          example: Algebra, Geometrie
+        nr_dozent:
+          type: integer
+          example: 1
+        startdatum:
+          type: string
+          format: date
+          example: 2025-01-15
+        enddatum:
+          type: string
+          format: date
+          example: 2025-03-15
+        dauer:
+          type: integer
+          example: 60
+    KursCreate:
+      type: object
+      required:
+        - kursnummer
+        - kursthema
+      properties:
+        kursnummer:
+          type: string
+        kursthema:
+          type: string
+        inhalt:
+          type: string
+        nr_dozent:
+          type: integer
+        startdatum:
+          type: string
+          format: date
+        enddatum:
+          type: string
+          format: date
+        dauer:
+          type: integer
+    KursUpdate:
+      type: object
+      required:
+        - id_kurs
+      properties:
+        id_kurs:
+          type: integer
+        kursnummer:
+          type: string
+        kursthema:
+          type: string
+        inhalt:
+          type: string
+        nr_dozent:
+          type: integer
+        startdatum:
+          type: string
+          format: date
+        enddatum:
+          type: string
+          format: date
+        dauer:
+          type: integer
+    KursLernende:
+      type: object
+      properties:
+        id_kurse_lernende:
+          type: integer
+          example: 1
+        nr_kurs:
+          type: integer
+          example: 1
+        nr_lernende:
+          type: integer
+          example: 2
+        note:
+          type: number
+          format: float
+          example: 5.5
+    KursLernendeCreate:
+      type: object
+      required:
+        - nr_kurs
+        - nr_lernende
+      properties:
+        nr_kurs:
+          type: integer
+        nr_lernende:
+          type: integer
+        note:
+          type: number
+          format: float
+    KursLernendeUpdate:
+      type: object
+      required:
+        - id_kurse_lernende
+      properties:
+        id_kurse_lernende:
+          type: integer
+        nr_kurs:
+          type: integer
+        nr_lernende:
+          type: integer
+        note:
+          type: number
+          format: float
+    LehrbetriebLernende:
+      type: object
+      properties:
+        id_lehrbetriebe_lernende:
+          type: integer
+          example: 1
+        nr_lehrbetrieb:
+          type: integer
+          example: 1
+        nr_lernende:
+          type: integer
+          example: 2
+        start:
+          type: string
+          format: date
+          example: 2025-01-01
+        ende:
+          type: string
+          format: date
+          example: 2025-12-31
+        beruf:
+          type: string
+          example: Kaufmann
+    LehrbetriebLernendeCreate:
+      type: object
+      required:
+        - nr_lehrbetrieb
+        - nr_lernende
+      properties:
+        nr_lehrbetrieb:
+          type: integer
+        nr_lernende:
+          type: integer
+        start:
+          type: string
+          format: date
+        ende:
+          type: string
+          format: date
+        beruf:
+          type: string
+    LehrbetriebLernendeUpdate:
+      type: object
+      required:
+        - id_lehrbetriebe_lernende
+      properties:
+        id_lehrbetriebe_lernende:
+          type: integer
+        nr_lehrbetrieb:
+          type: integer
+        nr_lernende:
+          type: integer
+        start:
+          type: string
+          format: date
+        ende:
+          type: string
+          format: date
+        beruf:
+          type: string
