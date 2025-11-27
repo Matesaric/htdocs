@@ -98,4 +98,17 @@ function updateRecord($table, $data, $idCol) {
     $stmt->close();
     return ["success"=>true, "affected_rows"=>$aff, "id"=>$id];
 }
+// GET ALL Records
+function getAllRecords($table) {
+    global $mysqli;
+
+    $sql = "SELECT * FROM `$table`";
+    $res = $mysqli->query($sql);
+
+    if(!$res) {
+        return ["error" => $mysqli->error];
+    }
+
+    return $res->fetch_all(MYSQLI_ASSOC);
+}
 ?>

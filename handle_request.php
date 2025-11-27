@@ -2,6 +2,11 @@
 require 'crud.php';
 
 function handleRequest($table, $idCol) {
+
+    if (isset($_GET['all'])) {
+        echo json_encode(getAllRecords($table));
+        exit;
+    }
     $id = $_GET[$idCol] ?? null;
 
     switch($_SERVER['REQUEST_METHOD']) {
