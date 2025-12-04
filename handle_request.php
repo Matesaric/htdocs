@@ -2,7 +2,6 @@
 require 'crud.php';
 
 function handleRequest($table, $idCol) {
-
     header('Content-Type: application/json; charset=utf-8');
 
     $id = null;
@@ -10,7 +9,7 @@ function handleRequest($table, $idCol) {
         $path = trim($_SERVER['PATH_INFO'], '/');
         if ($path !== '') {
             $parts = explode('/', $path);
-            $id = $parts[0];
+            $id = preg_replace('/[^0-9]/', '', $parts[0]);
         }
     } else {
         $script = $_SERVER['SCRIPT_NAME'] ?? '';
@@ -21,19 +20,22 @@ function handleRequest($table, $idCol) {
             $rest = trim($rest, '/');
             if ($rest !== '') {
                 $parts = explode('/', $rest);
-                $id = $parts[0];
+                $id = preg_replace('/[^0-9]/', '', $parts[0]);
             }
         }
     }
 
     if (isset($_GET['all'])) {
-        http_response_code(200);
-        echo json_encode(getAllRecords($table));
-        exit;
+        $all = filter_var($_GET['all'], FILTER_VALIDATE_BOOLEAN);
+        if ($all) {
+            http_response_code(200);
+            echo json_encode(getAllRecords($table));
+            exit;
+        }
     }
 
-    if (!$id) {
-        $id = $_GET[$idCol] ?? null;
+    if (!$id && isset($_GET[$idCol])) {
+        $id = preg_replace('/[^0-9]/', '', $_GET[$idCol]);
     }
 
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -82,12 +84,20 @@ function handleRequest($table, $idCol) {
                 exit;
             }
             $input = json_decode(file_get_contents("php://input"), true);
-            if (!$input) {
+            if (!$input || !is_array($input)) {
                 http_response_code(400);
                 echo json_encode(["error"=>"Keine Daten übergeben oder ungültiges JSON"]);
                 exit;
             }
-            $res = insertRecord($table, $input);
+            $sanitized = array();
+            foreach ($input as $k => $v) {
+                if (is_numeric($v)) {
+                    $sanitized[$k] = preg_replace('/[^0-9.]/', '', $v);
+                } else {
+                    $sanitized[$k] = trim(strip_tags($v));
+                }
+            }
+            $res = insertRecord($table, $sanitized);
             if (isset($res['error'])) {
                 http_response_code(500);
                 echo json_encode($res);
@@ -112,13 +122,21 @@ function handleRequest($table, $idCol) {
                 exit;
             }
             $input = json_decode(file_get_contents("php://input"), true);
-            if (!$input) {
+            if (!$input || !is_array($input)) {
                 http_response_code(400);
                 echo json_encode(["error"=>"Keine Daten übergeben oder ungültiges JSON"]);
                 exit;
             }
-            $input[$idCol] = (int)$id;
-            $res = saveRecord($table, $input, $idCol);
+            $sanitized = array();
+            foreach ($input as $k => $v) {
+                if (is_numeric($v)) {
+                    $sanitized[$k] = preg_replace('/[^0-9.]/', '', $v);
+                } else {
+                    $sanitized[$k] = trim(strip_tags($v));
+                }
+            }
+            $sanitized[$idCol] = (int)$id;
+            $res = saveRecord($table, $sanitized, $idCol);
             if (isset($res['error'])) {
                 http_response_code(400);
                 echo json_encode($res);
