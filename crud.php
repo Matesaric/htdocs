@@ -1,4 +1,12 @@
 <?php
+/**
+ * crud.php
+ *
+ * Database helper functions for CRUD operations used by the REST dispatcher.
+ * Uses mysqli prepared statements and basic sanitization/validation.
+ *
+ * @package Kursverwaltung
+ */
 require 'validate.php';
 
 // Datenbankverbindung
@@ -6,6 +14,14 @@ $mysqli = new mysqli("localhost", "root", "", "Kursverwaltung");
 if($mysqli->connect_error) die(json_encode(["error"=>"DB-Verbindung fehlgeschlagen: ".$mysqli->connect_error]));
 
 // GET Record
+/**
+ * Hole eine einzelne Zeile anhand der ID.
+ *
+ * @param string $table Tabellenname (bereinigt intern)
+ * @param string $idCol Spaltenname der ID
+ * @param int $id ID der gesuchten Zeile
+ * @return array|null Assoziatives Array der Zeile oder null, wenn nicht gefunden
+ */
 function getRecord($table, $idCol, $id) {
     global $mysqli;
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
@@ -22,6 +38,14 @@ function getRecord($table, $idCol, $id) {
 }
 
 // DELETE Record
+/**
+ * Lösche eine Zeile anhand der ID.
+ *
+ * @param string $table Tabellenname (bereinigt intern)
+ * @param string $idCol Spaltenname der ID
+ * @param int $id ID der zu löschenden Zeile
+ * @return array Ergebnisarray mit keys `success` und `affected_rows` oder `error`
+ */
 function deleteRecord($table, $idCol, $id) {
     global $mysqli;
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
@@ -37,6 +61,15 @@ function deleteRecord($table, $idCol, $id) {
 }
 
 // INSERT / UPDATE
+/**
+ * Speichere einen Datensatz: Insert oder Update abhängig von $data[$idCol].
+ * Führt Validierung über `validateField` aus und bereinigt Keys/Values.
+ *
+ * @param string $table Tabellenname
+ * @param array $data Assoziatives Array der Daten
+ * @param string $idCol Name der ID-Spalte
+ * @return array Ergebnisarray oder Fehlerbeschreibung
+ */
 function saveRecord($table, $data, $idCol) {
     global $mysqli;
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
@@ -56,6 +89,13 @@ function saveRecord($table, $data, $idCol) {
     return insertRecord($table, $sanitized);
 }
 
+/**
+ * Führe einen INSERT für die übergebenen Daten aus.
+ *
+ * @param string $table Tabellenname
+ * @param array $data Assoziatives Array der zu insertierenden Daten
+ * @return array Ergebnis mit `success` und `id` oder `error`
+ */
 function insertRecord($table, $data) {
     global $mysqli;
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
@@ -85,6 +125,14 @@ function insertRecord($table, $data) {
     return ["success"=>true, "id"=>$id];
 }
 
+/**
+ * Führe ein UPDATE für die übergebenen Daten aus.
+ *
+ * @param string $table Tabellenname
+ * @param array $data Assoziatives Array der zu updatenden Daten (inkl. idCol)
+ * @param string $idCol Name der ID-Spalte
+ * @return array Ergebnis mit `success` und `affected_rows` oder `error`
+ */
 function updateRecord($table, $data, $idCol) {
     global $mysqli;
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
@@ -119,6 +167,12 @@ function updateRecord($table, $data, $idCol) {
     return ["success"=>true, "affected_rows"=>$aff, "id"=>$id];
 }
 // GET ALL Records
+/**
+ * Liefere alle Datensätze der Tabelle als Array von assoziativen Arrays.
+ *
+ * @param string $table Tabellenname
+ * @return array Liste von Datensätzen oder `error`-Array
+ */
 function getAllRecords($table) {
     global $mysqli;
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);

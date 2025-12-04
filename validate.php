@@ -1,4 +1,26 @@
 <?php
+/**
+ * Validates a single field/value pair for a specific database table.
+ *
+ * Diese Funktion prüft anhand des Tabellennamens ($table) und des Feldnamens ($key),
+ * ob der übergebene Wert ($value) gültig ist. Jede Tabelle hat dabei eigene Regeln
+ * wie Maximallängen, Datumsformatierungen, Nummernprüfungen oder erlaubte Werte.
+ *
+ * Bei ungültigen Eingaben wird ein Fehlertext zurückgegeben, ansonsten `null`.
+ *
+ * Beispiele für Validierungen:
+ * - Strings dürfen bestimmte Längen nicht überschreiten.
+ * - IDs müssen numerisch und > 0 sein.
+ * - Datumsfelder müssen im Format YYYY-MM-DD valide sein.
+ * - E-Mails müssen RFC-konform sein.
+ * - Telefonnummern folgen einem eingeschränkten Zeichenmuster.
+ *
+ * @param string $table Name der Datenbanktabelle (z. B. `tbl_countries`, `tbl_lernende`).
+ * @param string $key   Der zu prüfende Feldname innerhalb der Tabelle.
+ * @param mixed  $value Der Wert, der validiert werden soll.
+ *
+ * @return string|null Gibt eine Fehlermeldung zurück oder `null`, wenn der Wert gültig ist.
+ */
 function validateField($table, $key, $value) {
 
     switch($table) {

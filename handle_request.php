@@ -1,6 +1,26 @@
 <?php
+/**
+ * handle_request.php
+ *
+ * Simple REST-style request dispatcher for a single resource table.
+ * Parses PATH_INFO / REQUEST_URI for an optional resource id, reads JSON body,
+ * sanitizes inputs and delegates to CRUD functions in `crud.php`.
+ *
+ * @package Kursverwaltung
+ */
 require 'crud.php';
 
+/**
+ * Dispatch an HTTP request for the given table/resource.
+ *
+ * Reads the request method, optional ID from the path or query, sanitizes
+ * inputs and calls the appropriate CRUD helper. Responses are returned as
+ * JSON and appropriate HTTP status codes are set.
+ *
+ * @param string $table Database table name (trusted/hardcoded per resource file)
+ * @param string $idCol Name of the ID column in the table (e.g. 'id_dozent')
+ * @return void Outputs JSON and sets HTTP status code; exits on completion.
+ */
 function handleRequest($table, $idCol) {
     header('Content-Type: application/json; charset=utf-8');
 
