@@ -12,9 +12,10 @@ function getRecord($table, $idCol, $id) {
     if(!$stmt) return ["error"=>$mysqli->error];
     $stmt->bind_param("i", $id);
     $stmt->execute();
-    $res = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
     $stmt->close();
-    return $res;
+    return $row ?: null;
 }
 
 // DELETE Record
