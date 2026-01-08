@@ -8,6 +8,15 @@
  *
  * @package Kursverwaltung
  */
+// CORS erlauben für alle Origins
+header("Access-Control-Allow-Origin: *");
+
+// JSON als Content-Type
+header("Content-Type: application/json");
+
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
 require 'crud.php';
 
 /**
