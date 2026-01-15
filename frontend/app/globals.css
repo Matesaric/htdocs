@@ -26,6 +26,9 @@ button {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     margin-right: 5px;
     font-family: Arial, Helvetica, sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 button:hover {
     background: linear-gradient(135deg, #5a6268 0%, #6c757d 100%);
@@ -33,6 +36,7 @@ button:hover {
 .button-group {
     margin-bottom: 10px;
 }
+
 /* TABELLEN */
 table {
     width: 100%;
