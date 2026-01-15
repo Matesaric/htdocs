@@ -8,14 +8,17 @@
  *
  * @package Kursverwaltung
  */
-// CORS erlauben für alle Origins
-header("Access-Control-Allow-Origin: *");
+// CORS + JSON
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// JSON als Content-Type
-header("Content-Type: application/json");
-
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+// **OPTIONS Preflight abfangen**
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
 
 require 'crud.php';
 
