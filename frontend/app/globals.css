@@ -1,12 +1,135 @@
-table {
-    border: 1px solid black;
+body {
     width: 100%;
+    display: flex;
+    justify-content: center;
 }
-th, td {
-    border: 1px solid black;
-    padding: 8px;
-    text-align: left;
+main {
+    width: 75%;
+}
+h1 {
+    font-size: 30px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+h2 {
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
 }
 button {
-    padding: 4px 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+    border: none;
+    font-size: 14px;
+    font-weight: 550;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    margin-right: 5px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+button:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #6c757d 100%);
+}
+.button-group {
+    margin-bottom: 10px;
+}
+/* TABELLEN */
+table {
+    width: 100%;
+}
+td, th {
+    text-align: left;
+    font-size: 14px;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 8px;
+    white-space: nowrap;
+}
+th {
+    font-weight: 550;
+}
+tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+tr:hover {
+    background-color: #e9ecef;
+}
+th:nth-child(1) { width: 15%; }
+th:nth-child(2) { width: 15%; }
+th:nth-child(3) { width: 5%; }
+th:nth-child(4) { width: 15%; } 
+th:nth-child(5) { width: 15%; }
+th:nth-child(6) { width: 15%; }
+
+/* FORMULARE - BEARBEITEN UND NEU */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 6px;
+  width: 90%;
+  max-width: 800px;
+}
+.form-grid {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid #ddd;
+}
+.form-grid label {
+  padding: 8px;
+  font-size: 14px;
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+.form-grid label:nth-child(odd) {
+  background-color: #f8f9fa;
+}
+.form-grid label:nth-child(2n) {
+  border-right: none;
+}
+.form-grid label.full-width {
+  grid-column: 1 / -1;
+  border-right: none;
+}
+.form-grid input {
+  width: 100%;
+  padding: 6px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: Arial, Helvetica, sans-serif;
+  box-sizing: border-box;
+}
+.form-grid select {
+  width: 100%;
+  padding: 6px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: Arial, Helvetica, sans-serif;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.form-grid input:focus {
+  outline: none;
+  border-color: #6c757d;
+  box-shadow: 0 0 4px rgba(108, 117, 125, 0.3);
+}
+.modal-buttons {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }

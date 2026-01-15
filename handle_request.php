@@ -104,7 +104,7 @@ function handleRequest($table, $idCol) {
                     http_response_code(204);
                 } else {
                     http_response_code(404);
-                    echo json_encode(["error"=>"Nicht gefunden"]);
+                    echo json_encode(["error"=>"Datensatz mit ID $id nicht gefunden"]);
                 }
             }
             exit;

@@ -101,11 +101,15 @@ function insertRecord($table, $data) {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $cols = $place = $params = [];
     $types = "";
+    $foreignKeys = ['nr_land', 'nr_dozent', 'nr_lehrbetrieb', 'nr_lernende', 'nr_kurs'];
     foreach($data as $k=>$v) {
         $kClean = preg_replace('/[^a-zA-Z0-9_]/', '', $k);
         $cols[] = "`$kClean`";
         $place[] = "?";
-        if (is_numeric($v)) {
+        if (in_array($kClean, $foreignKeys) && ($v === "" || $v === null)) {
+            $params[] = null;
+            $types .= "s";
+        } elseif (is_numeric($v) && $v !== "") {
             $params[] = preg_replace('/[^0-9.]/', '', $v);
             $types .= "d";
         } else {
@@ -141,10 +145,16 @@ function updateRecord($table, $data, $idCol) {
     unset($data[$idCol]);
     $set = $params = [];
     $types = "";
+    $foreignKeys = ['nr_land', 'nr_dozent', 'nr_lehrbetrieb', 'nr_lernende', 'nr_kurs'];
     foreach($data as $k=>$v) {
         $kClean = preg_replace('/[^a-zA-Z0-9_]/', '', $k);
         $set[] = "`$kClean`=?";
-        if (is_numeric($v)) {
+        
+        // Felder mit Foreign Keys: leere Strings zu NULL konvertieren
+        if (in_array($kClean, $foreignKeys) && ($v === "" || $v === null)) {
+            $params[] = null;
+            $types .= "s";
+        } elseif (is_numeric($v) && $v !== "") {
             $params[] = preg_replace('/[^0-9.]/', '', $v);
             $types .= "d";
         } else {

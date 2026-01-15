@@ -225,10 +225,12 @@ export default function LernendePage() {
 
   return (
     <main>
-      <h1>Willkommen zur Kursverwaltung - Lernende</h1>
-      <button onClick={() => history.back()}>Geh zurück</button>
-
-      <button onClick={handleNew}>neuer Lernender</button>
+      <h1>Kursverwaltung - Lernende</h1>
+      
+      <div className="button-group">
+        <button onClick={() => history.back()}>Geh zurück</button>
+        <button onClick={handleNew}>Neuer Lernender</button>
+      </div>
 
       {loading && <p>Lade Daten …</p>}
       {error && <p>Fehler: {error}</p>}
@@ -274,11 +276,11 @@ export default function LernendePage() {
       </table>
 
       {editOpen && (
-        <div>
-          <div role="dialog" aria-modal="true">
+        <div className="modal-overlay">
+          <div className="modal-content" role="dialog" aria-modal="true">
             <h2>{editItem ? "Bearbeite Lernenden" : "Neuer Lernender"}</h2>
 
-            <div>
+            <div className="form-grid">
               <label>
                 Vorname
                 <input value={(editForm.vorname as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, vorname: e.target.value }))} />
@@ -289,7 +291,7 @@ export default function LernendePage() {
                 <input value={(editForm.nachname as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, nachname: e.target.value }))} />
               </label>
 
-              <label>
+              <label className="full-width">
                 Strasse
                 <input value={(editForm.strasse as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, strasse: e.target.value }))} />
               </label>
@@ -311,7 +313,12 @@ export default function LernendePage() {
 
               <label>
                 Geschlecht (m/w/d)
-                <input value={(editForm.geschlecht as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, geschlecht: e.target.value }))} />
+                <select value={(editForm.geschlecht as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, geschlecht: e.target.value }))}>
+                  <option value="">-- Bitte wählen --</option>
+                  <option value="m">Männlich</option>
+                  <option value="w">Weiblich</option>
+                  <option value="d">Divers</option>
+                </select>
               </label>
 
               <label>
@@ -324,23 +331,23 @@ export default function LernendePage() {
                 <input value={(editForm.handy as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, handy: e.target.value }))} />
               </label>
 
-              <label>
+              <label className="full-width">
                 E-Mail
                 <input value={(editForm.email as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} />
               </label>
 
-              <label>
-                E-Mail privat
+              <label className="full-width">
+                E-Mail Privat
                 <input value={(editForm.email_privat as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, email_privat: e.target.value }))} />
               </label>
 
-              <label>
-                Birthdate
+              <label className="full-width">
+                Geburtsdatum
                 <input type="date" value={(editForm.birthdate as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, birthdate: e.target.value }))} />
               </label>
             </div>
 
-            <div>
+            <div className="modal-buttons">
               <button onClick={() => { setEditOpen(false); setEditItem(null); setOrigItem(null); }}>
                 Abbrechen
               </button>
