@@ -107,6 +107,77 @@ button:hover {
     background: linear-gradient(135deg, #5a6268 0%, #6c757d 100%);
 }
 
+/* BUTTON GROUP & SEARCH BAR */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.button-group-left {
+    display: flex;
+    align-items: center;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.search-toggle-btn {
+    padding: 7px 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow: hidden;
+    transition: width 0.3s ease;
+    width: 0;
+    opacity: 0;
+}
+
+.search-bar.open {
+    width: 250px;
+    opacity: 1;
+}
+
+.search-input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: Arial, Helvetica, sans-serif;
+    width: 100%;
+    flex-grow: 1;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #6c757d;
+    box-shadow: 0 0 4px rgba(108, 117, 125, 0.3);
+}
+
+.refresh-btn {
+    padding: 8px 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    margin: 0;
+}
+
 /* TABELLEN */
 table {
     width: 100%;

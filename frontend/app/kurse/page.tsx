@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
 
 type Kurs = {
@@ -22,6 +23,20 @@ export default function KursePage() {
   const [editItem, setEditItem] = useState<Kurs | null>(null);
   const [editForm, setEditForm] = useState<Partial<Kurs>>({});
   const [origItem, setOrigItem] = useState<Kurs | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const filteredData = data && searchTerm
+    ? data.filter(item =>
+        Object.values(item).some(val =>
+          String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      )
+    : data;
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -229,7 +244,27 @@ export default function KursePage() {
       <main>
 
       <div className="button-group">
-        <button onClick={handleNew}>Neuer Kurs</button>
+        <div className="button-group-left">
+          <button onClick={handleNew}>Neuer Kurs</button>
+          <div className="search-container">
+            <button className="search-toggle-btn" onClick={() => setSearchOpen(!searchOpen)} title="Suche">
+              <Search size={18} />
+            </button>
+            <div className={`search-bar ${searchOpen ? "open" : ""}`}>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Suchen …"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                autoFocus={searchOpen}
+              />
+            </div>
+          </div>
+        </div>
+        <button className="refresh-btn" onClick={handleRefresh} title="Seite aktualisieren">
+          <RefreshCw size={18} />
+        </button>
       </div>
 
       {loading && <p>Lade Daten …</p>}
@@ -257,26 +292,26 @@ export default function KursePage() {
           </tr>
         </thead>
         <tbody>
-          {!data || data.length === 0 ? (
+          {!filteredData || filteredData.length === 0 ? (
             <tr>
               <td colSpan={7}>
                 Keine Einträge vorhanden.
               </td>
             </tr>
           ) : (
-            data.map((p, idx) => (
-              <tr key={p.id_kurs ?? p.id ?? idx}>
-                <td>{p.kursnummer ?? "-"}</td>
-                <td>{p.kursthema ?? "-"}</td>
-                <td>{p.dozent_name || p.nr_dozent || "-"}</td>
-                <td>{p.startdatum ?? "-"}</td>
-                <td>{p.enddatum ?? "-"}</td>
-                <td>{p.dauer ?? "-"}</td>
+            filteredData.map((k, idx) => (
+              <tr key={k.id_kurs ?? k.id ?? idx}>
+                <td>{k.kursnummer ?? "-"}</td>
+                <td>{k.kursthema ?? "-"}</td>
+                <td>{k.dozent_name || k.nr_dozent || "-"}</td>
+                <td>{k.startdatum ?? "-"}</td>
+                <td>{k.enddatum ?? "-"}</td>
+                <td>{k.dauer ?? "-"}</td>
                 <td>
-                  <button onClick={() => handleEdit(p)}>
+                  <button onClick={() => handleEdit(k)}>
                     Bearbeiten
                   </button>
-                  <button onClick={() => handleDelete(p)}>
+                  <button onClick={() => handleDelete(k)}>
                     Löschen
                   </button>
                 </td>

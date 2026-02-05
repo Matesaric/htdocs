@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
 
 type KurseLernende = {
@@ -19,6 +20,20 @@ export default function KurseLernendePage() {
   const [editItem, setEditItem] = useState<KurseLernende | null>(null);
   const [editForm, setEditForm] = useState<Partial<KurseLernende>>({});
   const [origItem, setOrigItem] = useState<KurseLernende | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const filteredData = data && searchTerm
+    ? data.filter(item =>
+        Object.values(item).some(val =>
+          String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      )
+    : data;
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -202,7 +217,27 @@ export default function KurseLernendePage() {
       <main>
 
       <div className="button-group">
-        <button onClick={handleNew}>Neuer Eintrag</button>
+        <div className="button-group-left">
+          <button onClick={handleNew}>Neuer Eintrag</button>
+          <div className="search-container">
+            <button className="search-toggle-btn" onClick={() => setSearchOpen(!searchOpen)} title="Suche">
+              <Search size={18} />
+            </button>
+            <div className={`search-bar ${searchOpen ? "open" : ""}`}>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Suchen …"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                autoFocus={searchOpen}
+              />
+            </div>
+          </div>
+        </div>
+        <button className="refresh-btn" onClick={handleRefresh} title="Seite aktualisieren">
+          <RefreshCw size={18} />
+        </button>
       </div>
 
       {loading && <p>Lade Daten …</p>}
@@ -218,12 +253,12 @@ export default function KurseLernendePage() {
           </tr>
         </thead>
         <tbody>
-          {!data || data.length === 0 ? (
+          {!filteredData || filteredData.length === 0 ? (
             <tr>
               <td colSpan={4}>Keine Einträge vorhanden.</td>
             </tr>
           ) : (
-            data.map((p, idx) => (
+            filteredData.map((p, idx) => (
               <tr key={p.id_kurse_lernende ?? idx}>
                 <td>{p.kurs_titel || p.nr_kurs}</td>
                 <td>{p.lernende_name || p.nr_lernende}</td>

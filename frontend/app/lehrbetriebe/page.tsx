@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
 
 type Lehrbetrieb = {
@@ -19,6 +20,20 @@ export default function LehrbetriebePage() {
   const [editItem, setEditItem] = useState<Lehrbetrieb | null>(null);
   const [editForm, setEditForm] = useState<Partial<Lehrbetrieb>>({});
   const [origItem, setOrigItem] = useState<Lehrbetrieb | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const filteredData = data && searchTerm
+    ? data.filter(item =>
+        Object.values(item).some(val =>
+          String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      )
+    : data;
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -185,7 +200,27 @@ export default function LehrbetriebePage() {
       <main>
 
       <div className="button-group">
-        <button onClick={handleNew}>Neuer Lehrbetrieb</button>
+        <div className="button-group-left">
+          <button onClick={handleNew}>Neuer Lehrbetrieb</button>
+          <div className="search-container">
+            <button className="search-toggle-btn" onClick={() => setSearchOpen(!searchOpen)} title="Suche">
+              <Search size={18} />
+            </button>
+            <div className={`search-bar ${searchOpen ? "open" : ""}`}>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Suchen …"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                autoFocus={searchOpen}
+              />
+            </div>
+          </div>
+        </div>
+        <button className="refresh-btn" onClick={handleRefresh} title="Seite aktualisieren">
+          <RefreshCw size={18} />
+        </button>
       </div>
 
       {loading && <p>Lade…</p>}
@@ -202,12 +237,12 @@ export default function LehrbetriebePage() {
           </tr>
         </thead>
         <tbody>
-          {!data || data.length === 0 ? (
+          {!filteredData || filteredData.length === 0 ? (
             <tr>
               <td colSpan={5}>Keine Einträge</td>
             </tr>
           ) : (
-            data.map((b, i) => (
+            filteredData.map((b, i) => (
               <tr key={b.id_lehrbetrieb ?? i}>
                 <td>{b.firma}</td>
                 <td>{b.strasse}</td>
