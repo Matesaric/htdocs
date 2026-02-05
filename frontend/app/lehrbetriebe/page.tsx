@@ -181,8 +181,10 @@ export default function LehrbetriebePage() {
   return (
     <main>
       <h1>Kursverwaltung - Lehrbetriebe</h1>
-      <button onClick={() => history.back()}>Geh zurück</button>
-      <button onClick={handleNew}>Neuer Lehrbetrieb</button>
+      <div className="button-group">
+        <button onClick={() => history.back()}>Geh zurück</button>
+        <button onClick={handleNew}>Neuer Lehrbetrieb</button>
+      </div>
 
       {loading && <p>Lade…</p>}
       {error && <p>Fehler: {error}</p>}
