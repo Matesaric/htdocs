@@ -10,7 +10,7 @@
 require 'validate.php';
 
 // Datenbankverbindung
-$mysqli = new mysqli("localhost", "root", "", "Kursverwaltung");
+$mysqli = new mysqli("localhost", "root", "", "kursverwaltung");
 if($mysqli->connect_error) die(json_encode(["error"=>"DB-Verbindung fehlgeschlagen: ".$mysqli->connect_error]));
 
 // GET Record

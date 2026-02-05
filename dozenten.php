@@ -21,4 +21,6 @@ require 'handle_request.php';
 
 $table = 'tbl_dozenten';   // Datenbanktabelle für diese Ressource
 $idCol = 'id_dozent';      // Primärschlüsselspalte der Tabelle
+
+handleRequest($table, $idCol);
 ?>
