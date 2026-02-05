@@ -15,6 +15,7 @@ type Dozent = {
   handy?: string;
   email?: string;
   birthdate?: string;
+  land_name?: string;
   [key: string]: any;
 };
 
@@ -232,6 +233,10 @@ export default function DozentenPage() {
     <>
       <Navbar />
       <main>
+
+      <div className="button-group">
+        <button onClick={handleNew}>Neuer Dozent</button>
+      </div>
 
       {loading && <p>Lade Daten …</p>}
       {error && <p>Fehler: {error}</p>}

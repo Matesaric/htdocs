@@ -186,7 +186,33 @@ function updateRecord($table, $data, $idCol) {
 function getAllRecords($table) {
     global $mysqli;
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-    $sql = "SELECT * FROM `$table`";
+    
+    // Definiere JOIN-Mappings für Foreign Keys
+    $joins = [];
+    $selectExtra = "";
+    
+    if ($table === 'tbl_kurse_lernende') {
+        $joins[] = "LEFT JOIN tbl_kurse k ON `tbl_kurse_lernende`.`nr_kurs` = k.`id_kurs`";
+        $joins[] = "LEFT JOIN tbl_lernende l ON `tbl_kurse_lernende`.`nr_lernende` = l.`id_lernende`";
+        $selectExtra = ", k.`kursthema` AS kurs_titel, CONCAT(l.`vorname`, ' ', l.`nachname`) AS lernende_name";
+    } elseif ($table === 'tbl_lehrbetriebe_lernende') {
+        $joins[] = "LEFT JOIN tbl_lehrbetriebe lb ON `tbl_lehrbetriebe_lernende`.`nr_lehrbetrieb` = lb.`id_lehrbetrieb`";
+        $joins[] = "LEFT JOIN tbl_lernende l ON `tbl_lehrbetriebe_lernende`.`nr_lernende` = l.`id_lernende`";
+        $selectExtra = ", lb.`firma` AS lehrbetrieb_name, CONCAT(l.`vorname`, ' ', l.`nachname`) AS lernende_name";
+    } elseif ($table === 'tbl_kurse') {
+        $joins[] = "LEFT JOIN tbl_dozenten d ON `tbl_kurse`.`nr_dozent` = d.`id_dozent`";
+        $selectExtra = ", CONCAT(d.`vorname`, ' ', d.`nachname`) AS dozent_name";
+    } elseif ($table === 'tbl_dozenten') {
+        $joins[] = "LEFT JOIN tbl_countries c ON `tbl_dozenten`.`nr_land` = c.`id_country`";
+        $selectExtra = ", c.`country` AS land_name";
+    } elseif ($table === 'tbl_lernende') {
+        $joins[] = "LEFT JOIN tbl_countries c ON `tbl_lernende`.`nr_land` = c.`id_country`";
+        $selectExtra = ", c.`country` AS land_name";
+    }
+    
+    $joinStr = count($joins) > 0 ? " " . implode(" ", $joins) : "";
+    $sql = "SELECT `$table`.*" . $selectExtra . " FROM `$table`" . $joinStr;
+    
     $res = $mysqli->query($sql);
     if(!$res) {
         return ["error" => $mysqli->error];

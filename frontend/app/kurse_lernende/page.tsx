@@ -7,6 +7,8 @@ type KurseLernende = {
   nr_kurs?: number | string;
   nr_lernende?: number | string;
   note?: number | string;
+  kurs_titel?: string;
+  lernende_name?: string;
 };
 
 export default function KurseLernendePage() {
@@ -199,14 +201,18 @@ export default function KurseLernendePage() {
       <Navbar />
       <main>
 
+      <div className="button-group">
+        <button onClick={handleNew}>Neuer Eintrag</button>
+      </div>
+
       {loading && <p>Lade Daten …</p>}
       {error && <p>Fehler: {error}</p>}
 
       <table aria-label="Kurse Lernende Tabelle">
         <thead>
           <tr>
-            <th>Nr. Kurs</th>
-            <th>Nr. Lernende</th>
+            <th>Kurs</th>
+            <th>Lernender</th>
             <th>Note</th>
             <th>Aktionen</th>
           </tr>
@@ -219,8 +225,8 @@ export default function KurseLernendePage() {
           ) : (
             data.map((p, idx) => (
               <tr key={p.id_kurse_lernende ?? idx}>
-                <td>{p.nr_kurs}</td>
-                <td>{p.nr_lernende}</td>
+                <td>{p.kurs_titel || p.nr_kurs}</td>
+                <td>{p.lernende_name || p.nr_lernende}</td>
                 <td>{p.note ?? "-"}</td>
                 <td>
                   <button onClick={() => openEdit(p)}>Bearbeiten</button>

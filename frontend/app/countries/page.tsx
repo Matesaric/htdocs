@@ -203,6 +203,10 @@ export default function CountriesPage() {
       <Navbar />
       <main>
 
+      <div className="button-group">
+        <button onClick={handleNew}>Neues Land</button>
+      </div>
+
       {loading && <p>Lade Daten …</p>}
       {error && <p>Fehler: {error}</p>}
 

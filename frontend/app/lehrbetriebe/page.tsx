@@ -184,6 +184,10 @@ export default function LehrbetriebePage() {
       <Navbar />
       <main>
 
+      <div className="button-group">
+        <button onClick={handleNew}>Neuer Lehrbetrieb</button>
+      </div>
+
       {loading && <p>Lade…</p>}
       {error && <p>Fehler: {error}</p>}
 

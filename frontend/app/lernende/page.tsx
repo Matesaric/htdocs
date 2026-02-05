@@ -16,6 +16,7 @@ type Lernender = {
   email?: string;
   email_privat?: string;
   birthdate?: string;
+  land_name?: string;
   [key: string]: any;
 };
 
@@ -228,6 +229,10 @@ export default function LernendePage() {
     <>
       <Navbar />
       <main>
+
+      <div className="button-group">
+        <button onClick={handleNew}>Neuer Lernender</button>
+      </div>
 
       {loading && <p>Lade Daten …</p>}
       {error && <p>Fehler: {error}</p>}

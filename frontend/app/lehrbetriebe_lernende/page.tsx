@@ -9,6 +9,8 @@ type LehrbetriebLernende = {
   start?: string;
   ende?: string;
   beruf?: string;
+  lehrbetrieb_name?: string;
+  lernende_name?: string;
 };
 
 export default function LehrbetriebLernendePage() {
@@ -205,14 +207,18 @@ export default function LehrbetriebLernendePage() {
       <Navbar />
       <main>
 
+      <div className="button-group">
+        <button onClick={handleNew}>Neuer Eintrag</button>
+      </div>
+
       {loading && <p>Lade Daten …</p>}
       {error && <p>Fehler: {error}</p>}
 
       <table aria-label="Lehrbetrieb Lernende Tabelle">
         <thead>
           <tr>
-            <th>Nr. Lehrbetrieb</th>
-            <th>Nr. Lernende</th>
+            <th>Lehrbetrieb</th>
+            <th>Lernender</th>
             <th>Start</th>
             <th>Ende</th>
             <th>Beruf</th>
@@ -227,8 +233,8 @@ export default function LehrbetriebLernendePage() {
           ) : (
             data.map((p, idx) => (
               <tr key={p.id_lehrbetriebe_lernende ?? idx}>
-                <td>{p.nr_lehrbetrieb}</td>
-                <td>{p.nr_lernende}</td>
+                <td>{p.lehrbetrieb_name || p.nr_lehrbetrieb}</td>
+                <td>{p.lernende_name || p.nr_lernende}</td>
                 <td>{p.start ?? "-"}</td>
                 <td>{p.ende ?? "-"}</td>
                 <td>{p.beruf ?? "-"}</td>

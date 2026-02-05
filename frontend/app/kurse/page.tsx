@@ -10,6 +10,7 @@ type Kurs = {
   startdatum?: string;
   enddatum?: string;
   dauer?: number | string;
+  dozent_name?: string;
   [key: string]: any;
 };
 
@@ -227,6 +228,10 @@ export default function KursePage() {
       <Navbar />
       <main>
 
+      <div className="button-group">
+        <button onClick={handleNew}>Neuer Kurs</button>
+      </div>
+
       {loading && <p>Lade Daten …</p>}
       {error && <p>Fehler: {error}</p>}
 
@@ -244,7 +249,7 @@ export default function KursePage() {
           <tr>
             <th>Kursnummer</th>
             <th>Kursthema</th>
-            <th>Dozent ID</th>
+            <th>Dozent</th>
             <th>Startdatum</th>
             <th>Enddatum</th>
             <th>Dauer</th>
@@ -263,7 +268,7 @@ export default function KursePage() {
               <tr key={p.id_kurs ?? p.id ?? idx}>
                 <td>{p.kursnummer ?? "-"}</td>
                 <td>{p.kursthema ?? "-"}</td>
-                <td>{p.nr_dozent ?? "-"}</td>
+                <td>{p.dozent_name || p.nr_dozent || "-"}</td>
                 <td>{p.startdatum ?? "-"}</td>
                 <td>{p.enddatum ?? "-"}</td>
                 <td>{p.dauer ?? "-"}</td>

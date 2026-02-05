@@ -50,10 +50,10 @@ export default function HomePage() {
   }, []);
 
   const statCards = [
-    { label: 'Dozenten', value: stats.dozenten, icon: GraduationCap, href: '/dozenten'},
-    { label: 'Kurse', value: stats.kurse, icon: BookOpen, href: '/kurse'},
-    { label: 'Lernende', value: stats.lernende, icon: User, href: '/lernende'},
     { label: 'Lehrbetriebe', value: stats.lehrbetriebe, icon: Building2, href: '/lehrbetriebe'},
+    { label: 'Lernende', value: stats.lernende, icon: User, href: '/lernende'},
+    { label: 'Kurse', value: stats.kurse, icon: BookOpen, href: '/kurse'},
+    { label: 'Dozenten', value: stats.dozenten, icon: GraduationCap, href: '/dozenten'},
   ];
 
   return (
