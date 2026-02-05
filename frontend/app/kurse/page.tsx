@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import Navbar from "../components/Navbar";
 
 type Kurs = {
   id_kurs?: number;
@@ -222,13 +223,9 @@ export default function KursePage() {
   };
 
   return (
-    <main>
-      <h1>Kursverwaltung - Kurse</h1>
-      
-      <div className="button-group">
-        <button onClick={() => history.back()}>Geh zurück</button>
-        <button onClick={handleNew}>Neuer Kurs</button>
-      </div>
+    <>
+      <Navbar />
+      <main>
 
       {loading && <p>Lade Daten …</p>}
       {error && <p>Fehler: {error}</p>}
@@ -330,6 +327,7 @@ export default function KursePage() {
           </div>
         </div>
       )}
-    </main>
+      </main>
+    </>
   );
 }

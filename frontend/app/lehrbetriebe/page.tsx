@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import Navbar from "../components/Navbar";
 
 type Lehrbetrieb = {
   id_lehrbetrieb?: number;
@@ -179,12 +180,9 @@ export default function LehrbetriebePage() {
   };
 
   return (
-    <main>
-      <h1>Kursverwaltung - Lehrbetriebe</h1>
-      <div className="button-group">
-        <button onClick={() => history.back()}>Geh zurück</button>
-        <button onClick={handleNew}>Neuer Lehrbetrieb</button>
-      </div>
+    <>
+      <Navbar />
+      <main>
 
       {loading && <p>Lade…</p>}
       {error && <p>Fehler: {error}</p>}
@@ -285,6 +283,7 @@ export default function LehrbetriebePage() {
           </div>
         </div>
       )}
-    </main>
+      </main>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import Navbar from "../components/Navbar";
 
 type Country = {
   id_country?: number;
@@ -198,13 +199,9 @@ export default function CountriesPage() {
   };
 
   return (
-    <main>
-      <h1>Kursverwaltung - Länder</h1>
-      
-      <div className="button-group">
-        <button onClick={() => history.back()}>Geh zurück</button>
-        <button onClick={handleNew}>Neues Land</button>
-      </div>
+    <>
+      <Navbar />
+      <main>
 
       {loading && <p>Lade Daten …</p>}
       {error && <p>Fehler: {error}</p>}
@@ -262,6 +259,7 @@ export default function CountriesPage() {
           </div>
         </div>
       )}
-    </main>
+      </main>
+    </>
   );
 }
