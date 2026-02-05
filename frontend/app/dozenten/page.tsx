@@ -229,7 +229,7 @@ export default function DozentenPage() {
 
   return (
     <main>
-      <h1>Willkommen zur Kursverwaltung - Dozenten</h1>
+      <h1>Kursverwaltung - Dozenten</h1>
       
       <div className="button-group">
         <button onClick={() => history.back()}>Geh zurück</button>

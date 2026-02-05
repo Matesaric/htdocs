@@ -223,7 +223,7 @@ export default function KursePage() {
 
   return (
     <main>
-      <h1>Willkommen zur Kursverwaltung - Kurse</h1>
+      <h1>Kursverwaltung - Kurse</h1>
       
       <div className="button-group">
         <button onClick={() => history.back()}>Geh zurück</button>

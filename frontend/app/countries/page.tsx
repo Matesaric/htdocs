@@ -199,7 +199,7 @@ export default function CountriesPage() {
 
   return (
     <main>
-      <h1>Willkommen zur Kursverwaltung - Länder</h1>
+      <h1>Kursverwaltung - Länder</h1>
       
       <div className="button-group">
         <button onClick={() => history.back()}>Geh zurück</button>

@@ -180,7 +180,7 @@ export default function LehrbetriebePage() {
 
   return (
     <main>
-      <h1>Willkommen zur Kursverwaltung - Lehrbetriebe</h1>
+      <h1>Kursverwaltung - Lehrbetriebe</h1>
       <button onClick={() => history.back()}>Geh zurück</button>
       <button onClick={handleNew}>Neuer Lehrbetrieb</button>
 
