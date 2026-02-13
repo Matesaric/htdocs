@@ -51,13 +51,109 @@ function deleteRecord($table, $idCol, $id) {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $idCol = preg_replace('/[^a-zA-Z0-9_]/', '', $idCol);
     $id = (int)$id;
-    $stmt = $mysqli->prepare("DELETE FROM `$table` WHERE `$idCol`=?");
-    if(!$stmt) return ["error"=>$mysqli->error];
-    $stmt->bind_param("i",$id);
-    $stmt->execute();
-    $aff = $stmt->affected_rows;
-    $stmt->close();
-    return ["success"=>true, "affected_rows"=>$aff];
+    $totalAffected = 0;
+    try {
+        $mysqli->begin_transaction();
+
+        if ($table === 'tbl_lernende') {
+            $stmt = $mysqli->prepare("DELETE FROM `tbl_kurse_lernende` WHERE `nr_lernende`=?");
+            if (!$stmt) throw new Exception($mysqli->error);
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $totalAffected += $stmt->affected_rows;
+            $stmt->close();
+
+            $stmt = $mysqli->prepare("DELETE FROM `tbl_lehrbetriebe_lernende` WHERE `nr_lernende`=?");
+            if (!$stmt) throw new Exception($mysqli->error);
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $totalAffected += $stmt->affected_rows;
+            $stmt->close();
+        } elseif ($table === 'tbl_kurse') {
+            $stmt = $mysqli->prepare("DELETE FROM `tbl_kurse_lernende` WHERE `nr_kurs`=?");
+            if (!$stmt) throw new Exception($mysqli->error);
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $totalAffected += $stmt->affected_rows;
+            $stmt->close();
+        } elseif ($table === 'tbl_lehrbetriebe') {
+            $stmt = $mysqli->prepare("DELETE FROM `tbl_lehrbetriebe_lernende` WHERE `nr_lehrbetrieb`=?");
+            if (!$stmt) throw new Exception($mysqli->error);
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $totalAffected += $stmt->affected_rows;
+            $stmt->close();
+        } elseif ($table === 'tbl_dozenten') {
+            $stmt = $mysqli->prepare("SELECT `id_kurs` FROM `tbl_kurse` WHERE `nr_dozent`=?");
+            if (!$stmt) throw new Exception($mysqli->error);
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $kursIds = [];
+            while ($row = $res->fetch_assoc()) {
+                $kursIds[] = (int)$row['id_kurs'];
+            }
+            $stmt->close();
+
+            if (count($kursIds) > 0) {
+                $placeholders = implode(',', array_fill(0, count($kursIds), '?'));
+                $types = str_repeat('i', count($kursIds));
+                $sql = "DELETE FROM `tbl_kurse_lernende` WHERE `nr_kurs` IN ($placeholders)";
+                $stmt = $mysqli->prepare($sql);
+                if (!$stmt) throw new Exception($mysqli->error);
+                $refs = [];
+                $refs[] = &$types;
+                foreach ($kursIds as $k => $v) { $refs[] = &$kursIds[$k]; }
+                call_user_func_array([$stmt, 'bind_param'], $refs);
+                $stmt->execute();
+                $totalAffected += $stmt->affected_rows;
+                $stmt->close();
+
+                $placeholders = implode(',', array_fill(0, count($kursIds), '?'));
+                $types = str_repeat('i', count($kursIds));
+                $sql = "DELETE FROM `tbl_kurse` WHERE `id_kurs` IN ($placeholders)";
+                $stmt = $mysqli->prepare($sql);
+                if (!$stmt) throw new Exception($mysqli->error);
+                $refs = [];
+                $refs[] = &$types;
+                foreach ($kursIds as $k => $v) { $refs[] = &$kursIds[$k]; }
+                call_user_func_array([$stmt, 'bind_param'], $refs);
+                $stmt->execute();
+                $totalAffected += $stmt->affected_rows;
+                $stmt->close();
+            }
+        }
+
+        elseif ($table === 'tbl_countries') {
+            $stmt = $mysqli->prepare("UPDATE `tbl_dozenten` SET `nr_land` = NULL WHERE `nr_land` = ?");
+            if (!$stmt) throw new Exception($mysqli->error);
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $totalAffected += $stmt->affected_rows;
+            $stmt->close();
+
+            $stmt = $mysqli->prepare("UPDATE `tbl_lernende` SET `nr_land` = NULL WHERE `nr_land` = ?");
+            if (!$stmt) throw new Exception($mysqli->error);
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $totalAffected += $stmt->affected_rows;
+            $stmt->close();
+        }
+
+        $stmt = $mysqli->prepare("DELETE FROM `$table` WHERE `$idCol`=?");
+        if(!$stmt) throw new Exception($mysqli->error);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $aff = $stmt->affected_rows;
+        $totalAffected += $aff;
+        $stmt->close();
+
+        $mysqli->commit();
+        return ["success"=>true, "affected_rows"=>$totalAffected];
+    } catch (Exception $ex) {
+        $mysqli->rollback();
+        return ["error" => $ex->getMessage()];
+    }
 }
 
 // INSERT / UPDATE

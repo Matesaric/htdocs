@@ -6,7 +6,7 @@ require 'handle_request.php';
  *
  * Dieses Skript dient als Endpunkt für alle CRUD-Operationen auf der Tabelle
  * `tbl_dozenten`. Es lädt die zentrale `handleRequest()`-Funktion, übergibt
- * den Tabellennamen sowie die zugehörige ID-Spalte und verarbeitet anschließend
+ * den Tabellennamen sowie die zugehörige ID-Spalte und verarbeitet anschliessend
  * automatisch GET/POST/PUT/DELETE-Requests.
  *
  * Beispielaufrufe:

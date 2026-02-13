@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
+import ConfirmModal from "../components/ConfirmModal";
 
 type KurseLernende = {
   id_kurse_lernende?: number;
@@ -19,9 +20,10 @@ export default function KurseLernendePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<KurseLernende | null>(null);
   const [editForm, setEditForm] = useState<Partial<KurseLernende>>({});
-  const [origItem, setOrigItem] = useState<KurseLernende | null>(null);
+  
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ item: KurseLernende | null; reason?: string } | null>(null);
 
   const filteredData = data && searchTerm
     ? data.filter(item =>
@@ -60,7 +62,6 @@ export default function KurseLernendePage() {
   }, []);
 
   const openEdit = (p: KurseLernende) => {
-    setOrigItem(p);
     setEditItem(p);
     setEditForm({
       id_kurse_lernende: p.id_kurse_lernende,
@@ -72,7 +73,6 @@ export default function KurseLernendePage() {
   };
 
   const handleNew = () => {
-    setOrigItem(null);
     setEditItem(null);
     setEditForm({
       nr_kurs: "",
@@ -91,53 +91,26 @@ export default function KurseLernendePage() {
         alert("Keine gültige ID gefunden – Update unmöglich");
         return;
       }
-
-      const previous = origItem;
-
-      setData((current) =>
-        current
-          ? current.map((item) =>
-              item.id_kurse_lernende === id
-                ? { ...item, ...editForm }
-                : item
-            )
-          : current
-      );
-
       setEditOpen(false);
-
       try {
         const resp = await fetch(
           `http://localhost/kurse_lernende.php?id_kurse_lernende=${id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id_kurse_lernende: id,
-              ...editForm,
-            }),
+            body: JSON.stringify({ id_kurse_lernende: id, ...editForm }),
           }
         );
-
         const text = await resp.text();
         if (!resp.ok) throw new Error(text);
-      } catch {
-        alert("Fehler beim Speichern");
-        if (previous) {
-          setData((current) =>
-            current
-              ? current.map((item) =>
-                  item.id_kurse_lernende ===
-                  previous.id_kurse_lernende
-                    ? previous
-                    : item
-                )
-              : current
-          );
-        }
+        // Nach erfolgreichem Update neu laden
+        handleRefresh();
+        return;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        alert("Fehler beim Speichern: " + msg);
       } finally {
         setEditItem(null);
-        setOrigItem(null);
       }
       return;
     }
@@ -145,69 +118,47 @@ export default function KurseLernendePage() {
     setEditOpen(false);
 
     try {
-      const resp = await fetch(
-        "http://localhost/kurse_lernende.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(editForm),
-        }
-      );
-
+      const resp = await fetch("http://localhost/kurse_lernende.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
       const text = await resp.text();
       if (!resp.ok) throw new Error(text);
-
-      let createdId: number | undefined;
-      try {
-        createdId = JSON.parse(text)?.id_kurse_lernende;
-      } catch {}
-
-      const newRow: KurseLernende = {
-        ...(editForm as KurseLernende),
-        ...(createdId ? { id_kurse_lernende: createdId } : {}),
-      };
-
-      setData((current) =>
-        current ? [newRow, ...current] : [newRow]
-      );
-    } catch {
-      alert("Erstellen fehlgeschlagen");
+      // Nach erfolgreichem Erstellen neu laden
+      handleRefresh();
+      return;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      alert("Erstellen fehlgeschlagen: " + msg);
     } finally {
       setEditItem(null);
-      setOrigItem(null);
     }
   };
 
   const handleDelete = async (p: KurseLernende) => {
     const id = p.id_kurse_lernende;
     if (!id) return;
+    setDeleteConfirm({ item: p });
+  };
 
-    if (!confirm(`Löschen bestätigen für ID: ${id}?`)) return;
-
-    let removed: KurseLernende | null = null;
-
-    setData((prev) => {
-      if (!prev) return prev;
-      return prev.filter((item) => {
-        if (item.id_kurse_lernende === id) {
-          removed = item;
-          return false;
-        }
-        return true;
-      });
-    });
-
+  const confirmDelete = async () => {
+    const p = deleteConfirm?.item;
+    if (!p) {
+      setDeleteConfirm(null);
+      return;
+    }
+    const id = p.id_kurse_lernende;
     try {
-      await fetch(
-        `http://localhost/kurse_lernende.php?id_kurse_lernende=${id}`,
-        { method: "DELETE" }
-      );
-    } catch {
-      if (removed) {
-        setData((prev) =>
-          prev ? [removed!, ...prev] : [removed!]
-        );
-      }
+      const resp = await fetch(`http://localhost/kurse_lernende.php?id_kurse_lernende=${id}`, { method: "DELETE" });
+      const text = await resp.text();
+      if (!resp.ok) throw new Error(text);
+      setDeleteConfirm(null);
+      handleRefresh();
+      return;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setDeleteConfirm({ item: p, reason: msg });
     }
   };
 
@@ -337,6 +288,28 @@ export default function KurseLernendePage() {
             </div>
           </div>
         </div>
+      )}
+      {deleteConfirm?.item && (
+        <ConfirmModal
+          title="Zuweisung löschen?"
+          reason={deleteConfirm.reason ?? null}
+          onCancel={() => setDeleteConfirm(null)}
+          onConfirm={confirmDelete}
+        >
+          <p>Möchten Sie diese Zuweisung wirklich löschen?</p>
+          <div className="delete-info">
+            <h4>Zuweisungs-Informationen:</h4>
+            <div className="delete-info-field">
+              <strong>Kurs:</strong> {deleteConfirm.item.kurs_titel ?? deleteConfirm.item.nr_kurs ?? "-"}
+            </div>
+            <div className="delete-info-field">
+              <strong>Lernender:</strong> {deleteConfirm.item.lernende_name ?? deleteConfirm.item.nr_lernende ?? "-"}
+            </div>
+            <div className="delete-info-field">
+              <strong>ID:</strong> {deleteConfirm.item.id_kurse_lernende ?? deleteConfirm.item.id}
+            </div>
+          </div>
+        </ConfirmModal>
       )}
       </main>
     </>

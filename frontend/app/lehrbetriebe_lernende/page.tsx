@@ -24,6 +24,9 @@ export default function LehrbetriebLernendePage() {
   const [origItem, setOrigItem] = useState<LehrbetriebLernende | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [lehrbetriebe, setLehrbetriebe] = useState<any[]>([]);
+  const [lernende, setLernende] = useState<any[]>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ item: LehrbetriebLernende | null; reason?: string } | null>(null);
 
   const filteredData = data && searchTerm
     ? data.filter(item =>
@@ -100,47 +103,23 @@ export default function LehrbetriebLernendePage() {
 
       const previous = origItem;
 
-      setData((current) =>
-        current
-          ? current.map((item) =>
-              item.id_lehrbetriebe_lernende === id
-                ? { ...item, ...editForm }
-                : item
-            )
-          : current
-      );
-
       setEditOpen(false);
-
       try {
         const resp = await fetch(
           `http://localhost/lehrbetrieb_lernende.php?id_lehrbetriebe_lernende=${id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id_lehrbetriebe_lernende: id,
-              ...editForm,
-            }),
+            body: JSON.stringify({ id_lehrbetriebe_lernende: id, ...editForm }),
           }
         );
-
         const text = await resp.text();
         if (!resp.ok) throw new Error(text);
-      } catch (e: unknown) {
-        alert("Fehler beim Speichern");
-        if (previous) {
-          setData((current) =>
-            current
-              ? current.map((item) =>
-                  item.id_lehrbetriebe_lernende ===
-                  previous.id_lehrbetriebe_lernende
-                    ? previous
-                    : item
-                )
-              : current
-          );
-        }
+        // Nach erfolgreichem Update neu laden
+        handleRefresh();
+        return;
+      } catch (e: any) {
+        alert("Fehler beim Speichern: " + (e?.message ?? e));
       } finally {
         setEditItem(null);
         setOrigItem(null);
@@ -168,14 +147,9 @@ export default function LehrbetriebLernendePage() {
         createdId = JSON.parse(text)?.id_lehrbetriebe_lernende;
       } catch {}
 
-      const newRow: LehrbetriebLernende = {
-        ...(editForm as LehrbetriebLernende),
-        ...(createdId ? { id_lehrbetriebe_lernende: createdId } : {}),
-      };
-
-      setData((current) =>
-        current ? [newRow, ...current] : [newRow]
-      );
+      // Nach erfolgreichem Erstellen neu laden
+      handleRefresh();
+      return;
     } catch {
       alert("Erstellen fehlgeschlagen");
     } finally {
@@ -190,30 +164,28 @@ export default function LehrbetriebLernendePage() {
 
     if (!confirm(`Löschen bestätigen für ID: ${id}?`)) return;
 
-    let removed: LehrbetriebLernende | null = null;
+    // Öffne Bestätigungsdialog (nutze vorhandenen UI)
+    setDeleteConfirm({ item: p });
+  };
 
-    setData((prev) => {
-      if (!prev) return prev;
-      return prev.filter((item) => {
-        if (item.id_lehrbetriebe_lernende === id) {
-          removed = item;
-          return false;
-        }
-        return true;
-      });
-    });
-
+  // Wird aus dem Delete-Dialog aufgerufen
+  const confirmDelete = async () => {
+    const p = deleteConfirm?.item;
+    if (!p) {
+      setDeleteConfirm(null);
+      return;
+    }
+    const id = p.id_lehrbetriebe_lernende;
     try {
-      await fetch(
-        `http://localhost/lehrbetrieb_lernende.php?id_lehrbetriebe_lernende=${id}`,
-        { method: "DELETE" }
-      );
-    } catch {
-      if (removed) {
-        setData((prev) =>
-          prev ? [removed!, ...prev] : [removed!]
-        );
-      }
+      const resp = await fetch(`http://localhost/lehrbetrieb_lernende.php?id_lehrbetriebe_lernende=${id}`, { method: "DELETE" });
+      const text = await resp.text();
+      if (!resp.ok) throw new Error(text);
+      // Nach erfolgreichem Löschen neu laden
+      setDeleteConfirm(null);
+      handleRefresh();
+      return;
+    } catch (e: any) {
+      setDeleteConfirm({ item: p, reason: String(e?.message ?? e) });
     }
   };
 
@@ -370,6 +342,55 @@ export default function LehrbetriebLernendePage() {
               <button onClick={handleSave}>
                 {editItem ? "Speichern" : "Erstellen"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirm?.item && (
+        <div className="delete-dialog-overlay">
+          <div className="delete-dialog">
+            <h3>Zuweisung löschen?</h3>
+
+            {deleteConfirm?.reason ? (
+              <div className="delete-reason">
+                <strong>Fehler beim Löschen:</strong>
+                <br />
+                {deleteConfirm.reason}
+              </div>
+            ) : (
+              <>
+                <p>Möchten Sie diese Zuweisungen wirklich löschen?</p>
+                <div className="delete-info">
+                  <h4>Zuweisungs-Informationen:</h4>
+                    <div className="delete-info-field">
+                      <strong>Lehrbetrieb:</strong> {deleteConfirm.item.lehrbetrieb_name ?? deleteConfirm.item.firma ?? "-"}
+                    </div>
+                    <div className="delete-info-field">
+                      <strong>Lernender:</strong> {deleteConfirm.item.lernende_name ? deleteConfirm.item.lernende_name : (`${deleteConfirm.item.vorname ?? ""} ${deleteConfirm.item.nachname ?? ""}`).trim() || "-"}
+                    </div>
+                    <div className="delete-info-field">
+                      <strong>ID:</strong> {deleteConfirm.item.id_lehrbetriebe_lernende ?? deleteConfirm.item.id}
+                    </div>
+                </div>
+                <p style={{ color: "#666", fontSize: "13px" }}>
+                  Diese Aktion kann nicht rückgängig gemacht werden.
+                </p>
+              </>
+            )}
+
+            <div className="delete-dialog-buttons">
+              <button
+                className="delete-cancel-btn"
+                onClick={() => setDeleteConfirm(null)}
+              >
+                {deleteConfirm?.reason ? "Schliessen" : "Abbrechen"}
+              </button>
+              {!deleteConfirm?.reason && (
+                <button className="delete-confirm-btn" onClick={confirmDelete}>
+                  Ja, löschen
+                </button>
+              )}
             </div>
           </div>
         </div>

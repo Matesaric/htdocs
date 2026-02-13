@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
+import ConfirmModal from "../components/ConfirmModal";
 
 type Country = {
   id_country?: number;
@@ -16,9 +17,10 @@ export default function CountriesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<Country | null>(null);
   const [editForm, setEditForm] = useState<Partial<Country>>({});
-  const [origItem, setOrigItem] = useState<Country | null>(null);
+  
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ item: Country | null; reason?: string } | null>(null);
 
   const filteredData = data && searchTerm
     ? data.filter(item =>
@@ -42,8 +44,8 @@ export default function CountriesPage() {
         const json = await resp.json();
         if (!Array.isArray(json)) throw new Error("Unerwartetes Antwortformat");
         setData(json as Country[]);
-      } catch (e: any) {
-        setError(e?.message ?? "Fehler beim Laden");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Fehler beim Laden");
         setData([]);
       } finally {
         setLoading(false);
@@ -54,7 +56,6 @@ export default function CountriesPage() {
   }, []);
 
   const openEdit = (p: Country) => {
-    setOrigItem(p);
     setEditItem(p);
     setEditForm({
       id_country: p.id_country,
@@ -64,7 +65,6 @@ export default function CountriesPage() {
   };
 
   const handleNew = () => {
-    setOrigItem(null);
     setEditItem(null);
     setEditForm({
       country: "",
@@ -84,52 +84,26 @@ export default function CountriesPage() {
         return;
       }
       const id = Number(idRaw);
-      const previousCountry = origItem;
-
-      setData((currentData) =>
-        currentData
-          ? currentData.map((item) =>
-              String(item.id_country ?? item.id) === String(id)
-                ? { ...item, ...editForm, id_country: id }
-                : item
-            )
-          : currentData
-      );
-
       setEditOpen(false);
-
       try {
-        const payload = {
-          id_country: id,
-          ...editForm,
-        };
+        const payload = { id_country: id, ...editForm };
         console.log("Sende PUT-Request mit:", payload);
-        
         const resp = await fetch(`http://localhost/laender.php?id_country=${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-
         const text = await resp.text();
         console.log("Response Status:", resp.status, "Response Text:", text);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text}`);
-      } catch (e: any) {
-        alert("Fehler beim Speichern: " + (e?.message ?? e));
-
-        if (previousCountry) {
-          const previousId = String(previousCountry.id_country ?? previousCountry.id ?? "");
-          setData((currentData) =>
-            currentData
-              ? currentData.map((item) =>
-                  String(item.id_country ?? item.id ?? "") === previousId ? previousCountry : item
-                )
-              : currentData
-          );
-        }
+        // Nach erfolgreichem Update neu laden
+        handleRefresh();
+        return;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        alert("Fehler beim Speichern: " + msg);
       } finally {
         setEditItem(null);
-        setOrigItem(null);
       }
 
       return;
@@ -139,34 +113,22 @@ export default function CountriesPage() {
 
     try {
       console.log("Sende POST-Request mit:", editForm);
-      
       const resp = await fetch("http://localhost/laender.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
       });
-
       const text = await resp.text();
       console.log("Response Status:", resp.status, "Response Text:", text);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text}`);
-
-      let createdId: number | undefined;
-      try {
-        const j = JSON.parse(text);
-        createdId = j?.id_country;
-      } catch {}
-
-      const createdRow: Country = {
-        ...(editForm as Country),
-        ...(createdId != null ? { id_country: createdId } : {}),
-      };
-
-      setData((currentData) => (currentData ? [createdRow, ...currentData] : [createdRow]));
-    } catch (e: any) {
-      alert("Erstellen fehlgeschlagen: " + (e?.message ?? e));
+      // Nach erfolgreichem Erstellen neu laden
+      handleRefresh();
+      return;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      alert("Erstellen fehlgeschlagen: " + msg);
     } finally {
       setEditItem(null);
-      setOrigItem(null);
     }
   };
 
@@ -176,40 +138,27 @@ export default function CountriesPage() {
       alert("Keine gültige ID gefunden – Löschen unmöglich");
       return;
     }
+    setDeleteConfirm({ item: p });
+  };
 
+  const confirmDelete = async () => {
+    const p = deleteConfirm?.item;
+    if (!p) {
+      setDeleteConfirm(null);
+      return;
+    }
+    const idRaw = p.id_country ?? p.id;
     const idStr = String(idRaw);
-
-    if (!confirm(`Löschen bestätigen für ID: ${idStr}?`)) return;
-
-    let removedCountry: Country | null = null;
-
-    setData((previousData) => {
-      if (!previousData) return previousData;
-      const filteredData = previousData.filter((item) => {
-        const itemId = String(item.id_country ?? item.id ?? "");
-        if (itemId === idStr) {
-          removedCountry = item;
-          return false;
-        }
-        return true;
-      });
-      return filteredData;
-    });
-
     try {
-      const resp = await fetch(
-        `http://localhost/laender.php?id_country=${idStr}`,
-        { method: "DELETE" }
-      );
-
+      const resp = await fetch(`http://localhost/laender.php?id_country=${idStr}`, { method: "DELETE" });
       const text = await resp.text();
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text}`);
-    } catch (e: any) {
-      alert("Löschen fehlgeschlagen: " + (e?.message ?? e));
-
-      if (removedCountry) {
-        setData((previousData) => (previousData ? [removedCountry!, ...previousData] : [removedCountry!]));
-      }
+      if (!resp.ok) throw new Error(text);
+      setDeleteConfirm(null);
+      handleRefresh();
+      return;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setDeleteConfirm({ item: p, reason: msg });
     }
   };
 
@@ -297,6 +246,25 @@ export default function CountriesPage() {
             </div>
           </div>
         </div>
+      )}
+      {deleteConfirm?.item && (
+        <ConfirmModal
+          title="Land löschen?"
+          reason={deleteConfirm.reason ?? null}
+          onCancel={() => setDeleteConfirm(null)}
+          onConfirm={confirmDelete}
+        >
+          <p>Möchten Sie dieses Land wirklich löschen?</p>
+          <div className="delete-info">
+            <h4>Land-Informationen:</h4>
+            <div className="delete-info-field">
+              <strong>Land:</strong> {deleteConfirm.item.country ?? "-"}
+            </div>
+            <div className="delete-info-field">
+              <strong>ID:</strong> {deleteConfirm.item.id_country ?? deleteConfirm.item.id}
+            </div>
+          </div>
+        </ConfirmModal>
       )}
       </main>
     </>

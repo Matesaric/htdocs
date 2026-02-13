@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
+import ConfirmModal from "../components/ConfirmModal";
 
 type Lernender = {
   id_lernende?: number;
@@ -21,6 +22,12 @@ type Lernender = {
   [key: string]: any;
 };
 
+type Country = {
+  id_country?: number;
+  country?: string;
+  [key: string]: any;
+};
+
 export default function LernendePage() {
   const [data, setData] = useState<Lernender[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -28,9 +35,19 @@ export default function LernendePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<Lernender | null>(null);
   const [editForm, setEditForm] = useState<Partial<Lernender>>({});
-  const [origItem, setOrigItem] = useState<Lernender | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [countries, setCountries] = useState<Country[] | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ item: Lernender | null; reason?: string } | null>(null);
+
+  const genderLabel = (g?: string) => {
+    if (!g) return "-";
+    const s = String(g).toLowerCase();
+    if (s === "m") return "Männlich";
+    if (s === "w") return "Weiblich";
+    if (s === "d") return "Divers";
+    return g;
+  };
 
   const filteredData = data && searchTerm
     ? data.filter(item =>
@@ -54,8 +71,8 @@ export default function LernendePage() {
         const json = await resp.json();
         if (!Array.isArray(json)) throw new Error("Unerwartetes Antwortformat");
         setData(json as Lernender[]);
-      } catch (e: any) {
-        setError(e?.message ?? "Fehler beim Laden");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Fehler beim Laden");
         setData([]);
       } finally {
         setLoading(false);
@@ -63,10 +80,22 @@ export default function LernendePage() {
     };
 
     fetchData();
+
+    const fetchCountries = async () => {
+      try {
+        const resp = await fetch("http://localhost/laender.php?all=true");
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const json = await resp.json();
+        setCountries(Array.isArray(json) ? json as Country[] : []);
+      } catch {
+        setCountries([]);
+      }
+    };
+
+    fetchCountries();
   }, []);
 
   const openEdit = (p: Lernender) => {
-    setOrigItem(p);
     setEditItem(p);
     setEditForm({
       id_lernende: p.id_lernende,
@@ -87,7 +116,6 @@ export default function LernendePage() {
   };
 
   const handleNew = () => {
-    setOrigItem(null);
     setEditItem(null);
     setEditForm({
       vorname: "",
@@ -118,17 +146,6 @@ export default function LernendePage() {
         return;
       }
       const id = Number(idRaw);
-      const previousLernender = origItem;
-
-      setData((currentData) =>
-        currentData
-          ? currentData.map((item) =>
-              String(item.id_lernende ?? item.id) === String(id)
-                ? { ...item, ...editForm, id_lernende: id }
-                : item
-            )
-          : currentData
-      );
 
       setEditOpen(false);
 
@@ -144,19 +161,11 @@ export default function LernendePage() {
 
         const text = await resp.text();
         if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text}`);
+        // Nach erfolgreichem Update neu laden
+        handleRefresh();
+        return;
       } catch (e: any) {
         alert("Fehler beim Speichern: " + (e?.message ?? e));
-
-        if (previousLernender) {
-          const previousId = String(previousLernender.id_lernende ?? previousLernender.id ?? "");
-          setData((currentData) =>
-            currentData
-              ? currentData.map((item) =>
-                  String(item.id_lernende ?? item.id ?? "") === previousId ? previousLernender : item
-                )
-              : currentData
-          );
-        }
       } finally {
         setEditItem(null);
         setOrigItem(null);
@@ -176,19 +185,9 @@ export default function LernendePage() {
 
       const text = await resp.text();
       if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text}`);
-
-      let createdId: number | undefined;
-      try {
-        const j = JSON.parse(text);
-        createdId = j?.id_lernende;
-      } catch {}
-
-      const createdRow: Lernender = {
-        ...(editForm as Lernender),
-        ...(createdId != null ? { id_lernende: createdId } : {}),
-      };
-
-      setData((currentData) => (currentData ? [createdRow, ...currentData] : [createdRow]));
+      // Nach erfolgreichem Erstellen neu laden
+      handleRefresh();
+      return;
     } catch (e: any) {
       alert("Erstellen fehlgeschlagen: " + (e?.message ?? e));
     } finally {
@@ -203,40 +202,27 @@ export default function LernendePage() {
       alert("Keine gültige ID gefunden – Löschen unmöglich");
       return;
     }
+    setDeleteConfirm({ item: p });
+  };
 
+  const confirmDelete = async () => {
+    const p = deleteConfirm?.item;
+    if (!p) {
+      setDeleteConfirm(null);
+      return;
+    }
+    const idRaw = p.id_lernende ?? p.id;
     const idStr = String(idRaw);
-
-    if (!confirm(`Löschen bestätigen für ID: ${idStr}?`)) return;
-
-    let removedLernender: Lernender | null = null;
-
-    setData((previousData) => {
-      if (!previousData) return previousData;
-      const filteredData = previousData.filter((item) => {
-        const itemId = String(item.id_lernende ?? item.id ?? "");
-        if (itemId === idStr) {
-          removedLernender = item;
-          return false;
-        }
-        return true;
-      });
-      return filteredData;
-    });
-
     try {
-      const resp = await fetch(
-        `http://localhost/lernende.php?id_lernende=${idStr}`,
-        { method: "DELETE" }
-      );
-
+      const resp = await fetch(`http://localhost/lernende.php?id_lernende=${idStr}`, { method: "DELETE" });
       const text = await resp.text();
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text}`);
-    } catch (e: any) {
-      alert("Löschen fehlgeschlagen: " + (e?.message ?? e));
-
-      if (removedLernender) {
-        setData((previousData) => (previousData ? [removedLernender!, ...previousData] : [removedLernender!]));
-      }
+      if (!resp.ok) throw new Error(text);
+      setDeleteConfirm(null);
+      handleRefresh();
+      return;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setDeleteConfirm({ item: p, reason: msg });
     }
   };
 
@@ -277,6 +263,7 @@ export default function LernendePage() {
           <tr>
             <th>Vorname</th>
             <th>Nachname</th>
+            <th>Land</th>
             <th>Geschlecht</th>
             <th>E-Mail</th>
             <th>Ort</th>
@@ -295,7 +282,8 @@ export default function LernendePage() {
               <tr key={p.id_lernende ?? p.id ?? idx}>
                 <td>{p.vorname ?? "-"}</td>
                 <td>{p.nachname ?? "-"}</td>
-                <td>{p.geschlecht ?? "-"}</td>
+                <td>{p.land_name ?? p.nr_land ?? "-"}</td>
+                <td>{genderLabel(p.geschlecht)}</td>
                 <td>{p.email ?? p.email_privat ?? "-"}</td>
                 <td>{p.ort ?? "-"}</td>
                 <td>
@@ -344,8 +332,13 @@ export default function LernendePage() {
               </label>
 
               <label>
-                Nr. Land
-                <input value={String((editForm.nr_land as any) ?? "")} onChange={(e) => setEditForm((f) => ({ ...f, nr_land: e.target.value === "" ? "" : Number(e.target.value) }))} />
+                Land
+                <select value={String((editForm.nr_land as any) ?? "")} onChange={(e) => setEditForm((f) => ({ ...f, nr_land: e.target.value === "" ? "" : Number(e.target.value) }))}>
+                  <option value="">-- Bitte wählen --</option>
+                  {countries && countries.map((c) => (
+                    <option key={c.id_country ?? c.id} value={c.id_country ?? c.id}>{c.country}</option>
+                  ))}
+                </select>
               </label>
 
               <label>
@@ -385,13 +378,35 @@ export default function LernendePage() {
             </div>
 
             <div className="modal-buttons">
-              <button onClick={() => { setEditOpen(false); setEditItem(null); setOrigItem(null); }}>
+                <button onClick={() => { setEditOpen(false); setEditItem(null); }}>
                 Abbrechen
               </button>
               <button onClick={handleSave}>{editItem ? "Speichern" : "Erstellen"}</button>
             </div>
           </div>
         </div>
+      )}
+      {deleteConfirm?.item && (
+        <ConfirmModal
+          title="Lernenden löschen?"
+          reason={deleteConfirm.reason ?? null}
+          onCancel={() => setDeleteConfirm(null)}
+          onConfirm={confirmDelete}
+        >
+          <p>Möchten Sie diesen Lernenden wirklich löschen?</p>
+          <div className="delete-info">
+            <h4>Lernender-Informationen:</h4>
+            <div className="delete-info-field">
+              <strong>Name:</strong> {`${deleteConfirm.item.vorname ?? ""} ${deleteConfirm.item.nachname ?? ""}`.trim() || "-"}
+            </div>
+            <div className="delete-info-field">
+              <strong>Land:</strong> {deleteConfirm.item.land_name ?? deleteConfirm.item.nr_land ?? "-"}
+            </div>
+            <div className="delete-info-field">
+              <strong>ID:</strong> {deleteConfirm.item.id_lernende ?? deleteConfirm.item.id}
+            </div>
+          </div>
+        </ConfirmModal>
       )}
       </main>
     </>

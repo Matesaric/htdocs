@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
+import ConfirmModal from "../components/ConfirmModal";
 
 type Lehrbetrieb = {
   id_lehrbetrieb?: number;
@@ -22,6 +23,7 @@ export default function LehrbetriebePage() {
   const [origItem, setOrigItem] = useState<Lehrbetrieb | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ item: Lehrbetrieb | null; reason?: string } | null>(null);
 
   const filteredData = data && searchTerm
     ? data.filter(item =>
@@ -88,46 +90,20 @@ export default function LehrbetriebePage() {
         return;
       }
 
-      const previous = origItem;
-
-      setData((cur) =>
-        cur
-          ? cur.map((it) =>
-              it.id_lehrbetrieb === id ? { ...it, ...editForm } : it
-            )
-          : cur
-      );
-
       setEditOpen(false);
-
       try {
-        const resp = await fetch(
-          `http://localhost/lehrbetriebe.php?id_lehrbetrieb=${id}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id_lehrbetrieb: id,
-              ...editForm,
-            }),
-          }
-        );
-
+        const resp = await fetch(`http://localhost/lehrbetriebe.php?id_lehrbetrieb=${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_lehrbetrieb: id, ...editForm }),
+        });
         const text = await resp.text();
         if (!resp.ok) throw new Error(text);
+        // Nach erfolgreichem Update neu laden
+        handleRefresh();
+        return;
       } catch (e: any) {
-        alert("Fehler beim Speichern");
-        if (previous) {
-          setData((cur) =>
-            cur
-              ? cur.map((it) =>
-                  it.id_lehrbetrieb === previous.id_lehrbetrieb
-                    ? previous
-                    : it
-                )
-              : cur
-          );
-        }
+        alert("Fehler beim Speichern: " + (e?.message ?? e));
       } finally {
         setEditItem(null);
         setOrigItem(null);
@@ -143,54 +119,39 @@ export default function LehrbetriebePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
       });
-
       const text = await resp.text();
       if (!resp.ok) throw new Error(text);
-
-      let createdId: number | undefined;
-      try {
-        createdId = JSON.parse(text)?.id_lehrbetrieb;
-      } catch {}
-
-      const newRow: Lehrbetrieb = {
-        ...(editForm as Lehrbetrieb),
-        ...(createdId ? { id_lehrbetrieb: createdId } : {}),
-      };
-
-      setData((cur) => (cur ? [newRow, ...cur] : [newRow]));
-    } catch {
-      alert("Erstellen fehlgeschlagen");
+      // Nach erfolgreichem Erstellen neu laden
+      handleRefresh();
+      return;
+    } catch (e: any) {
+      alert("Erstellen fehlgeschlagen: " + (e?.message ?? e));
     }
   };
 
   const handleDelete = async (item: Lehrbetrieb) => {
     const id = item.id_lehrbetrieb;
     if (!id) return;
+    setDeleteConfirm({ item });
+  };
 
-    if (!confirm("Lehrbetrieb löschen?")) return;
-
-    let removed: Lehrbetrieb | null = null;
-
-    setData((cur) => {
-      if (!cur) return cur;
-      return cur.filter((it) => {
-        if (it.id_lehrbetrieb === id) {
-          removed = it;
-          return false;
-        }
-        return true;
-      });
-    });
-
+  const confirmDelete = async () => {
+    const p = deleteConfirm?.item;
+    if (!p) {
+      setDeleteConfirm(null);
+      return;
+    }
+    const id = p.id_lehrbetrieb;
     try {
-      await fetch(
-        `http://localhost/lehrbetriebe.php?id_lehrbetrieb=${id}`,
-        { method: "DELETE" }
-      );
-    } catch {
-      if (removed) {
-        setData((cur) => (cur ? [removed!, ...cur] : [removed!]));
-      }
+      const resp = await fetch(`http://localhost/lehrbetriebe.php?id_lehrbetrieb=${id}`, { method: "DELETE" });
+      const text = await resp.text();
+      if (!resp.ok) throw new Error(text);
+      setDeleteConfirm(null);
+      handleRefresh();
+      return;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setDeleteConfirm({ item: p, reason: msg });
     }
   };
 
@@ -321,6 +282,25 @@ export default function LehrbetriebePage() {
             </div>
           </div>
         </div>
+      )}
+      {deleteConfirm?.item && (
+        <ConfirmModal
+          title="Lehrbetrieb löschen?"
+          reason={deleteConfirm.reason ?? null}
+          onCancel={() => setDeleteConfirm(null)}
+          onConfirm={confirmDelete}
+        >
+          <p>Möchten Sie diesen Lehrbetrieb wirklich löschen?</p>
+          <div className="delete-info">
+            <h4>Lehrbetrieb-Informationen:</h4>
+            <div className="delete-info-field">
+              <strong>Firma:</strong> {deleteConfirm.item.firma ?? "-"}
+            </div>
+            <div className="delete-info-field">
+              <strong>ID:</strong> {deleteConfirm.item.id_lehrbetrieb ?? deleteConfirm.item.id}
+            </div>
+          </div>
+        </ConfirmModal>
       )}
       </main>
     </>

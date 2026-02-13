@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
+import ConfirmModal from "../components/ConfirmModal";
 
 type Kurs = {
   id_kurs?: number;
@@ -15,6 +16,13 @@ type Kurs = {
   [key: string]: any;
 };
 
+type SimpleDozent = {
+  id_dozent?: number;
+  vorname?: string;
+  nachname?: string;
+  [key: string]: any;
+};
+
 export default function KursePage() {
   const [data, setData] = useState<Kurs[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -22,9 +30,11 @@ export default function KursePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<Kurs | null>(null);
   const [editForm, setEditForm] = useState<Partial<Kurs>>({});
-  const [origItem, setOrigItem] = useState<Kurs | null>(null);
+  
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [dozentenList, setDozentenList] = useState<SimpleDozent[] | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ item: Kurs | null; reason?: string } | null>(null);
 
   const filteredData = data && searchTerm
     ? data.filter(item =>
@@ -57,10 +67,22 @@ export default function KursePage() {
     };
 
     fetchData();
+    // lade Dozenten für Dropdown
+    const fetchDozenten = async () => {
+      try {
+        const resp = await fetch("http://localhost/dozenten.php?all=true");
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const json = await resp.json();
+        setDozentenList(Array.isArray(json) ? json as SimpleDozent[] : []);
+      } catch {
+        setDozentenList([]);
+      }
+    };
+
+    fetchDozenten();
   }, []);
 
   const openEdit = (p: Kurs) => {
-    setOrigItem(p);
     setEditItem(p);
     setEditForm({
       id_kurs: p.id_kurs,
@@ -75,7 +97,6 @@ export default function KursePage() {
   };
 
   const handleNew = () => {
-    setOrigItem(null);
     setEditItem(null);
     setEditForm({
       kursnummer: "",
@@ -100,51 +121,29 @@ export default function KursePage() {
         return;
       }
       const id = Number(idRaw);
-      const previousKurs = origItem;
-
-      setData((currentData) =>
-        currentData
-          ? currentData.map((item) =>
-              String(item.id_kurs ?? item.id) === String(id)
-                ? { ...item, ...editForm, id_kurs: id }
-                : item
-            )
-          : currentData
-      );
 
       setEditOpen(false);
 
       try {
-        const payload = {
-          id_kurs: id,
-          ...editForm,
-        };
+        const payload = { id_kurs: id, ...editForm };
         console.log("Sende PUT-Request mit:", payload);
-        
+
         const resp = await fetch(`http://localhost/kurse.php?id_kurs=${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
 
-        console.log("Response Status:", resp.status);
-        if (!resp.ok) {
-          const text = await resp.text();
-          throw new Error(`HTTP ${resp.status}: ${text}`);
-        }
-      } catch (e: any) {
-        alert("Fehler beim Speichern: " + (e?.message ?? e));
-
-        if (previousKurs) {
-          const previousId = String(previousKurs.id_kurs ?? previousKurs.id ?? "");
-          setData((currentData) =>
-            currentData
-              ? currentData.map((item) =>
-                  String(item.id_kurs ?? item.id ?? "") === previousId ? previousKurs : item
-                )
-              : currentData
-          );
-        }
+        const text = await resp.text();
+        console.log("Response Status:", resp.status, "Response Text:", text);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text}`);
+        // Server hat gespeichert -> jetzt neu laden
+        handleRefresh();
+        return;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        alert("Fehler beim Speichern: " + msg);
+        // Fehler beim Speichern — keine lokale Rücksetzung nötig (kein optimistisches Update)
       } finally {
         setEditItem(null);
         setOrigItem(null);
@@ -157,37 +156,25 @@ export default function KursePage() {
 
     try {
       console.log("Sende POST-Request mit:", editForm);
-      
+
       const resp = await fetch("http://localhost/kurse.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
       });
 
-      console.log("Response Status:", resp.status);
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(`HTTP ${resp.status}: ${text}`);
-      }
-
       const text = await resp.text();
-      let createdId: number | undefined;
-      try {
-        const j = JSON.parse(text);
-        createdId = j?.id_kurs;
-      } catch {}
-
-      const createdRow: Kurs = {
-        ...(editForm as Kurs),
-        ...(createdId != null ? { id_kurs: createdId } : {}),
-      };
-
-      setData((currentData) => (currentData ? [createdRow, ...currentData] : [createdRow]));
-    } catch (e: any) {
-      alert("Erstellen fehlgeschlagen: " + (e?.message ?? e));
+      console.log("Response Status:", resp.status, "Response Text:", text);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text}`);
+      // Server hat erstellt -> jetzt neu laden
+      handleRefresh();
+      return;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      alert("Erstellen fehlgeschlagen: " + msg);
     } finally {
       setEditItem(null);
-      setOrigItem(null);
+      
     }
   };
 
@@ -197,44 +184,28 @@ export default function KursePage() {
       alert("Keine gültige ID gefunden – Löschen unmöglich");
       return;
     }
+    // open styled confirm dialog
+    setDeleteConfirm({ item: p });
+  };
 
+  const confirmDelete = async () => {
+    const p = deleteConfirm?.item;
+    if (!p) {
+      setDeleteConfirm(null);
+      return;
+    }
+    const idRaw = p.id_kurs ?? p.id;
     const idStr = String(idRaw);
-
-    if (!confirm(`Löschen bestätigen für ID: ${idStr}?`)) return;
-
-    let removedKurs: Kurs | null = null;
-
-    setData((previousData) => {
-      if (!previousData) return previousData;
-      const filteredData = previousData.filter((item) => {
-        const itemId = String(item.id_kurs ?? item.id ?? "");
-        if (itemId === idStr) {
-          removedKurs = item;
-          return false;
-        }
-        return true;
-      });
-      return filteredData;
-    });
-
     try {
-      console.log("DELETE Response Status");
-      const resp = await fetch(
-        `http://localhost/kurse.php?id_kurs=${idStr}`,
-        { method: "DELETE" }
-      );
-
-      console.log("DELETE Response Status:", resp.status);
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(`HTTP ${resp.status}: ${text}`);
-      }
-    } catch (e: any) {
-      alert("Löschen fehlgeschlagen: " + (e?.message ?? e));
-
-      if (removedKurs) {
-        setData((previousData) => (previousData ? [removedKurs!, ...previousData] : [removedKurs!]));
-      }
+      const resp = await fetch(`http://localhost/kurse.php?id_kurs=${idStr}`, { method: "DELETE" });
+      const text = await resp.text();
+      if (!resp.ok) throw new Error(text);
+      setDeleteConfirm(null);
+      handleRefresh();
+      return;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setDeleteConfirm({ item: p, reason: msg });
     }
   };
 
@@ -343,8 +314,13 @@ export default function KursePage() {
               </label>
 
               <label>
-                Nr. Dozent
-                <input type="number" value={String((editForm.nr_dozent as any) ?? "")} onChange={(e) => setEditForm((f) => ({ ...f, nr_dozent: e.target.value === "" ? "" : Number(e.target.value) }))} />
+                Dozent
+                <select value={String((editForm.nr_dozent as any) ?? "")} onChange={(e) => setEditForm((f) => ({ ...f, nr_dozent: e.target.value === "" ? "" : Number(e.target.value) }))}>
+                  <option value="">-- Bitte wählen --</option>
+                  {dozentenList && dozentenList.map((d) => (
+                    <option key={d.id_dozent ?? d.id} value={d.id_dozent ?? d.id}>{`${d.vorname ?? ""} ${d.nachname ?? ""}`.trim()}</option>
+                  ))}
+                </select>
               </label>
 
               <label>
@@ -359,13 +335,35 @@ export default function KursePage() {
             </div>
 
             <div className="modal-buttons">
-              <button onClick={() => { setEditOpen(false); setEditItem(null); setOrigItem(null); }}>
+              <button onClick={() => { setEditOpen(false); setEditItem(null); }}>
                 Abbrechen
               </button>
               <button onClick={handleSave}>{editItem ? "Speichern" : "Erstellen"}</button>
             </div>
           </div>
         </div>
+      )}
+      {deleteConfirm?.item && (
+        <ConfirmModal
+          title="Kurs löschen?"
+          reason={deleteConfirm.reason ?? null}
+          onCancel={() => setDeleteConfirm(null)}
+          onConfirm={confirmDelete}
+        >
+          <p>Möchten Sie diesen Kurs wirklich löschen?</p>
+          <div className="delete-info">
+            <h4>Kurs-Informationen:</h4>
+            <div className="delete-info-field">
+              <strong>Kursnummer:</strong> {deleteConfirm.item.kursnummer ?? "-"}
+            </div>
+            <div className="delete-info-field">
+              <strong>Thema:</strong> {deleteConfirm.item.kursthema ?? "-"}
+            </div>
+            <div className="delete-info-field">
+              <strong>ID:</strong> {deleteConfirm.item.id_kurs ?? deleteConfirm.item.id}
+            </div>
+          </div>
+        </ConfirmModal>
       )}
       </main>
     </>
