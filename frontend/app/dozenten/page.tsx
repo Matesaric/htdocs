@@ -357,7 +357,7 @@ export default function DozentenPage() {
               </label>
 
               <label>
-                Geschlecht (m/w/d)
+                Geschlecht
                 <select value={(editForm.geschlecht as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, geschlecht: e.target.value }))}>
                   <option value="">Bitte wählen</option>
                   <option value="m">Männlich</option>

@@ -35,6 +35,7 @@ export default function LernendePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<Lernender | null>(null);
   const [editForm, setEditForm] = useState<Partial<Lernender>>({});
+  const [origItem, setOrigItem] = useState<Lernender | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [countries, setCountries] = useState<Country[] | null>(null);
@@ -96,6 +97,7 @@ export default function LernendePage() {
   }, []);
 
   const openEdit = (p: Lernender) => {
+    setOrigItem(p);
     setEditItem(p);
     setEditForm({
       id_lernende: p.id_lernende,
@@ -116,6 +118,7 @@ export default function LernendePage() {
   };
 
   const handleNew = () => {
+    setOrigItem(null);
     setEditItem(null);
     setEditForm({
       vorname: "",
@@ -150,13 +153,20 @@ export default function LernendePage() {
       setEditOpen(false);
 
       try {
+        // Bereite Nutzlast vor und validiere birthdate
+        const payload: any = { id_lernende: id, ...editForm };
+        if (payload.birthdate === '' || payload.birthdate === '0000-00-00' || payload.birthdate == null) {
+          delete payload.birthdate;
+        } else {
+          const d = new Date(payload.birthdate);
+          if (isNaN(d.getTime())) delete payload.birthdate;
+          else payload.birthdate = d.toISOString().slice(0, 10);
+        }
+
         const resp = await fetch(`http://localhost/lernende.php?id_lernende=${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id_lernende: id,
-            ...editForm,
-          }),
+          body: JSON.stringify(payload),
         });
 
         const text = await resp.text();
@@ -177,10 +187,19 @@ export default function LernendePage() {
     setEditOpen(false);
 
     try {
+      const payload: any = { ...editForm };
+      if (payload.birthdate === '' || payload.birthdate === '0000-00-00' || payload.birthdate == null) {
+        delete payload.birthdate;
+      } else {
+        const d = new Date(payload.birthdate);
+        if (isNaN(d.getTime())) delete payload.birthdate;
+        else payload.birthdate = d.toISOString().slice(0, 10);
+      }
+
       const resp = await fetch("http://localhost/lernende.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(payload),
       });
 
       const text = await resp.text();
@@ -342,7 +361,7 @@ export default function LernendePage() {
               </label>
 
               <label>
-                Geschlecht (m/w/d)
+                Geschlecht
                 <select value={(editForm.geschlecht as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, geschlecht: e.target.value }))}>
                   <option value="">Bitte wählen</option>
                   <option value="m">Männlich</option>
@@ -378,7 +397,7 @@ export default function LernendePage() {
             </div>
 
             <div className="modal-buttons">
-                <button onClick={() => { setEditOpen(false); setEditItem(null); }}>
+                <button onClick={() => { setEditOpen(false); setEditItem(null); setOrigItem(null); }}>
                 Abbrechen
               </button>
               <button onClick={handleSave}>{editItem ? "Speichern" : "Erstellen"}</button>
