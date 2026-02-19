@@ -21,6 +21,7 @@ export default function CountriesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<Country | null>(null);
   const [editForm, setEditForm] = useState<Partial<Country>>({});
+  const [origItem, setOrigItem] = useState<Country | null>(null);
   
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -64,6 +65,7 @@ export default function CountriesPage() {
 
   // Formular mit den Werten eines bestehenden Landes füllen
   const openEdit = (p: Country) => {
+    setOrigItem(p);
     setEditItem(p);
     setEditForm({
       id_country: p.id_country,
@@ -74,6 +76,7 @@ export default function CountriesPage() {
 
   // Bereite leeres Formular für ein neues Land vor
   const handleNew = () => {
+    setOrigItem(null);
     setEditItem(null);
     setEditForm({
       country: "",
@@ -114,6 +117,7 @@ export default function CountriesPage() {
         alert("Fehler beim Speichern: " + msg);
       } finally {
         setEditItem(null);
+        setOrigItem(null);
       }
 
       return;
@@ -139,6 +143,7 @@ export default function CountriesPage() {
       alert("Erstellen fehlgeschlagen: " + msg);
     } finally {
       setEditItem(null);
+      setOrigItem(null);
     }
   };
 

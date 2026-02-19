@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Globe, GraduationCap, BookOpen, Users, Building2, Briefcase, User } from "lucide-react"
 import HomeDashboard from './components/HomeDashboard';
+import Navbar from './components/Navbar';
 
 // Startseite mit Statistikübersicht und kleinem Dashboard
 export default function HomePage() {
@@ -110,20 +111,7 @@ export default function HomePage() {
 
   return (
     <>
-      <nav className="navbar">
-        <div className="nav-container">
-          <h2 className="nav-title">Kursverwaltung</h2>
-          <div className="nav-links">
-            <Link href="/lehrbetriebe"><button><Building2 className="icon" />Lehrbetriebe</button></Link>
-            <Link href="/lehrbetriebe_lernende"><button><Briefcase className="icon" />Lehrbetriebe & Lernende</button></Link>
-            <Link href="/lernende"><button><User className="icon" />Lernende</button></Link>
-            <Link href="/countries"><button><Globe className="icon" />Länder</button></Link>
-            <Link href="/kurse_lernende"><button><Users className="icon" />Kurse & Lernende</button></Link>
-            <Link href="/kurse"><button><BookOpen className="icon" />Kurse</button></Link>
-            <Link href="/dozenten"><button><GraduationCap className="icon" />Dozenten</button></Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
       <main>
         <div className="stats-grid">
           {statCards.map((stat, i) => {

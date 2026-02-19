@@ -5,10 +5,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Globe, GraduationCap, BookOpen, Users, Building2, Briefcase, User } from "lucide-react"
+import { Globe, GraduationCap, BookOpen, Users, Building2, Briefcase, User, Menu, X } from "lucide-react"
+import { useState } from 'react';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   // Definition der Menüpunkte in der Navbar – Label, Ziel und Symbol
   const navItems = [
@@ -32,9 +34,14 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="nav-container">
-        <Link href="/">
-          <h2 className="nav-title">{getPageTitle()}</h2>
-        </Link>
+        <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+          <button className="mobile-hamburger" aria-label="Menü" onClick={() => setOpen(true)}>
+            <Menu />
+          </button>
+          <Link href="/">
+            <h2 className="nav-title">{getPageTitle()}</h2>
+          </Link>
+        </div>
         <div className="nav-links">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -49,6 +56,31 @@ export default function Navbar() {
             );
           })}
         </div>
+        {/* Mobile sidebar drawer */}
+        {open && (
+          <div>
+            <div className="mobile-overlay" onClick={() => setOpen(false)} />
+            <aside className="mobile-sidebar" role="dialog" aria-modal="true">
+              <div className="mobile-sidebar-header">
+                <h3>{getPageTitle()}</h3>
+                <button onClick={() => setOpen(false)} aria-label="Schließen"><X /></button>
+              </div>
+              <div className="mobile-sidebar-links">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <button className={isActive ? 'active' : ''} onClick={() => setOpen(false)}>
+                        <Icon className="icon" /> {item.label}
+                      </button>
+                    </Link>
+                  );
+                })}
+              </div>
+            </aside>
+          </div>
+        )}
       </div>
     </nav>
   );
