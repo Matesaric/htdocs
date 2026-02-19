@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
 
+// Datentyp für die Verknüpfung zwischen Lehrbetrieben und Lernenden.
+// Enthält optional die Namen aus den verknüpften Tabellen.
 type LehrbetriebLernende = {
   id_lehrbetriebe_lernende?: number;
   nr_lehrbetrieb?: number | string;
@@ -15,19 +17,29 @@ type LehrbetriebLernende = {
 };
 
 export default function LehrbetriebLernendePage() {
-  const [data, setData] = useState<LehrbetriebLernende[] | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  // Zustand für die geladenen Datensätze und UI‑Flags
+  const [data, setData] = useState<LehrbetriebLernende[] | null>(null); // Tabelleninhalt
+  const [loading, setLoading] = useState<boolean>(false); // Ladespinner
+  const [error, setError] = useState<string | null>(null); // Fehlertext
+
+  // Bearbeitungsdialog
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<LehrbetriebLernende | null>(null);
   const [editForm, setEditForm] = useState<Partial<LehrbetriebLernende>>({});
-  const [origItem, setOrigItem] = useState<LehrbetriebLernende | null>(null);
+  const [origItem, setOrigItem] = useState<LehrbetriebLernende | null>(null); // zur Rücksetzung
+
+  // Suchfeld
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Listen für die Fremdschlüssel‑Dropdowns
   const [lehrbetriebe, setLehrbetriebe] = useState<any[]>([]);
   const [lernende, setLernende] = useState<any[]>([]);
+
+  // Dialog für Löschbestätigung
   const [deleteConfirm, setDeleteConfirm] = useState<{ item: LehrbetriebLernende | null; reason?: string } | null>(null);
 
+  // Filtert die Datensätze mit dem aktuellen Suchbegriff (globale Suche)
   const filteredData = data && searchTerm
     ? data.filter(item =>
         Object.values(item).some(val =>
@@ -36,6 +48,7 @@ export default function LehrbetriebLernendePage() {
       )
     : data;
 
+  // Einfache Funktion zum Neuladen der Seite, z.B. nach Änderung
   const handleRefresh = () => {
     window.location.reload();
   };
@@ -62,7 +75,7 @@ export default function LehrbetriebLernendePage() {
     };
 
     const fetchRelations = async () => {
-      // load lehrbetriebe for fk dropdown
+      // Lehrbetriebe und Lernende laden für Dropdown‑Felder
       try {
         const resp = await fetch("http://localhost/lehrbetriebe.php?all=true");
         if (resp.ok) {
@@ -75,7 +88,6 @@ export default function LehrbetriebLernendePage() {
         setLehrbetriebe([]);
       }
 
-      // load lernende for fk dropdown
       try {
         const resp = await fetch("http://localhost/lernende.php?all=true");
         if (resp.ok) {
@@ -93,6 +105,7 @@ export default function LehrbetriebLernendePage() {
     fetchRelations();
   }, []);
 
+  // Eintrag zur Bearbeitung öffnen, Formular mit Werten füllen
   const openEdit = (p: LehrbetriebLernende) => {
     setOrigItem(p);
     setEditItem(p);
@@ -107,6 +120,7 @@ export default function LehrbetriebLernendePage() {
     setEditOpen(true);
   };
 
+  // Neues Formular für einen neuen Eintrag vorbereiten
   const handleNew = () => {
     setOrigItem(null);
     setEditItem(null);
@@ -120,6 +134,7 @@ export default function LehrbetriebLernendePage() {
     setEditOpen(true);
   };
 
+  // Speichern der Formularwerte – unterscheidet zwischen Update und Neuanlage
   const handleSave = async () => {
     const isEdit = !!editItem;
 
@@ -130,7 +145,7 @@ export default function LehrbetriebLernendePage() {
         return;
       }
 
-      const previous = origItem;
+      const previous = origItem; // könnte für Optimismus verwendet werden
 
       setEditOpen(false);
       try {
@@ -144,7 +159,7 @@ export default function LehrbetriebLernendePage() {
         );
         const text = await resp.text();
         if (!resp.ok) throw new Error(text);
-        // Nach erfolgreichem Update neu laden
+        // Daten aktualisiert, Seite neu laden
         handleRefresh();
         return;
       } catch (e: any) {
@@ -156,6 +171,7 @@ export default function LehrbetriebLernendePage() {
       return;
     }
 
+    // neuer Datensatz
     setEditOpen(false);
 
     try {
@@ -176,7 +192,6 @@ export default function LehrbetriebLernendePage() {
         createdId = JSON.parse(text)?.id_lehrbetriebe_lernende;
       } catch {}
 
-      // Nach erfolgreichem Erstellen neu laden
       handleRefresh();
       return;
     } catch {
@@ -187,17 +202,17 @@ export default function LehrbetriebLernendePage() {
     }
   };
 
+  // Benutzer klickt auf Löschen, zeige Bestätigungs-Overlay
   const handleDelete = async (p: LehrbetriebLernende) => {
     const id = p.id_lehrbetriebe_lernende;
     if (!id) return;
 
     if (!confirm(`Löschen bestätigen für ID: ${id}?`)) return;
 
-    // Öffne Bestätigungsdialog (nutze vorhandenen UI)
     setDeleteConfirm({ item: p });
   };
 
-  // Wird aus dem Delete-Dialog aufgerufen
+  // Wird aufgerufen, wenn der Nutzer das Löschen im Overlay bestätigt
   const confirmDelete = async () => {
     const p = deleteConfirm?.item;
     if (!p) {
@@ -209,7 +224,6 @@ export default function LehrbetriebLernendePage() {
       const resp = await fetch(`http://localhost/lehrbetrieb_lernende.php?id_lehrbetriebe_lernende=${id}`, { method: "DELETE" });
       const text = await resp.text();
       if (!resp.ok) throw new Error(text);
-      // Nach erfolgreichem Löschen neu laden
       setDeleteConfirm(null);
       handleRefresh();
       return;

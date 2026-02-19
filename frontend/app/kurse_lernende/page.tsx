@@ -4,6 +4,8 @@ import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
 import ConfirmModal from "../components/ConfirmModal";
 
+// Interface für den Datensatz der Kurse‑Lernende‑Zuordnung.
+// Enthält optional Informationen aus verknüpften Tabellen.
 type KurseLernende = {
   id_kurse_lernende?: number;
   nr_kurs?: number | string;
@@ -15,19 +17,28 @@ type KurseLernende = {
 };
 
 export default function KurseLernendePage() {
+  // Zustand der Seite: geladene Zeilen, Ladezustand, Fehler
   const [data, setData] = useState<KurseLernende[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Editierdialog
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<KurseLernende | null>(null);
   const [editForm, setEditForm] = useState<Partial<KurseLernende>>({});
+
+  // Auswahllisten für FK‑Dropdowns
   const [kurse, setKurse] = useState<any[]>([]);
   const [lernende, setLernende] = useState<any[]>([]);
   
+  // Suche
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Delete‑Bestätigung
   const [deleteConfirm, setDeleteConfirm] = useState<{ item: KurseLernende | null; reason?: string } | null>(null);
 
+  // gefilterte Daten basierend auf dem Suchbegriff (globale Suche)
   const filteredData = data && searchTerm
     ? data.filter(item =>
         Object.values(item).some(val =>
@@ -36,6 +47,7 @@ export default function KurseLernendePage() {
       )
     : data;
 
+  // einfache Hilfsfunktion zum Neuladen der Seite
   const handleRefresh = () => {
     window.location.reload();
   };
@@ -62,6 +74,7 @@ export default function KurseLernendePage() {
     };
 
     const fetchRelations = async () => {
+      // Kurse und Lernende für die Dropdown‑Felder laden
       try {
         const resp = await fetch("http://localhost/kurse.php?all=true");
         if (resp.ok) {
@@ -91,6 +104,7 @@ export default function KurseLernendePage() {
     fetchRelations();
   }, []);
 
+  // markierten Eintrag zur Bearbeitung öffnen
   const openEdit = (p: KurseLernende) => {
     setEditItem(p);
     setEditForm({
@@ -102,6 +116,7 @@ export default function KurseLernendePage() {
     setEditOpen(true);
   };
 
+  // neues, leeres Formular anzeigen
   const handleNew = () => {
     setEditItem(null);
     setEditForm({
@@ -112,6 +127,7 @@ export default function KurseLernendePage() {
     setEditOpen(true);
   };
 
+  // Speichern entweder als Update oder als neuer Datensatz
   const handleSave = async () => {
     const isEdit = !!editItem;
 
@@ -133,7 +149,6 @@ export default function KurseLernendePage() {
         );
         const text = await resp.text();
         if (!resp.ok) throw new Error(text);
-        // Nach erfolgreichem Update neu laden
         handleRefresh();
         return;
       } catch (e: unknown) {
@@ -166,12 +181,14 @@ export default function KurseLernendePage() {
     }
   };
 
+  // Benutzer wählt Löschen, setze das Item für den Bestätigungsdialog
   const handleDelete = async (p: KurseLernende) => {
     const id = p.id_kurse_lernende;
     if (!id) return;
     setDeleteConfirm({ item: p });
   };
 
+  // tatsächliches Löschen nach Bestätigung im Modal
   const confirmDelete = async () => {
     const p = deleteConfirm?.item;
     if (!p) {

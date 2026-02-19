@@ -1,5 +1,8 @@
 'use client';
 
+// Navigationsleiste mit Links zu den Hauptseiten der Anwendung
+// Aktiver Eintrag wird hervorgehoben mittels `usePathname` aus next/navigation
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Globe, GraduationCap, BookOpen, Users, Building2, Briefcase, User } from "lucide-react"
@@ -7,6 +10,7 @@ import { Globe, GraduationCap, BookOpen, Users, Building2, Briefcase, User } fro
 export default function Navbar() {
   const pathname = usePathname();
 
+  // Definition der Menüpunkte in der Navbar – Label, Ziel und Symbol
   const navItems = [
     { label: 'Lehrbetriebe', href: '/lehrbetriebe', icon: Building2 },
     { label: 'Lehrbetriebe & Lernende', href: '/lehrbetriebe_lernende', icon: Briefcase },
@@ -17,6 +21,7 @@ export default function Navbar() {
     { label: 'Dozenten', href: '/dozenten', icon: GraduationCap },
   ];
 
+  // Ermittelt den Seitentitel basierend auf dem aktuellen Pfad
   const getPageTitle = () => {
     const item = navItems.find(i => i.href === pathname);
     if (item) return item.label;

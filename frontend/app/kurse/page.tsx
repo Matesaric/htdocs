@@ -316,7 +316,7 @@ export default function KursePage() {
               <label>
                 Dozent
                 <select value={String((editForm.nr_dozent as any) ?? "")} onChange={(e) => setEditForm((f) => ({ ...f, nr_dozent: e.target.value === "" ? "" : Number(e.target.value) }))}>
-                  <option value="">-- Bitte wählen --</option>
+                  <option value="">Bitte wählen</option>
                   {dozentenList && dozentenList.map((d) => (
                     <option key={d.id_dozent ?? d.id} value={d.id_dozent ?? d.id}>{`${d.vorname ?? ""} ${d.nachname ?? ""}`.trim()}</option>
                   ))}

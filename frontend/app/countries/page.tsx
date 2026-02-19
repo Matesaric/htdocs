@@ -4,6 +4,9 @@ import { RefreshCw, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
 import ConfirmModal from "../components/ConfirmModal";
 
+// Datentyp für Länder, unverändert von API zurückgegeben
+// Zusätzliche Felder werden durch den Index-Typ abgefangen
+
 type Country = {
   id_country?: number;
   country?: string;
@@ -11,6 +14,7 @@ type Country = {
 };
 
 export default function CountriesPage() {
+  // Grundzustände und UI-Flags für die Länderverwaltung
   const [data, setData] = useState<Country[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +26,7 @@ export default function CountriesPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ item: Country | null; reason?: string } | null>(null);
 
+  // Filtert Länder nach Suchbegriff über alle Felder
   const filteredData = data && searchTerm
     ? data.filter(item =>
         Object.values(item).some(val =>
@@ -30,10 +35,12 @@ export default function CountriesPage() {
       )
     : data;
 
+  // Hilfsfunktion zum vollständigen Neuladen der Seite
   const handleRefresh = () => {
     window.location.reload();
   };
 
+  // Beim ersten Rendern Daten vom Server laden
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -55,6 +62,7 @@ export default function CountriesPage() {
     fetchData();
   }, []);
 
+  // Formular mit den Werten eines bestehenden Landes füllen
   const openEdit = (p: Country) => {
     setEditItem(p);
     setEditForm({
@@ -64,6 +72,7 @@ export default function CountriesPage() {
     setEditOpen(true);
   };
 
+  // Bereite leeres Formular für ein neues Land vor
   const handleNew = () => {
     setEditItem(null);
     setEditForm({
@@ -74,6 +83,7 @@ export default function CountriesPage() {
 
   const handleEdit = (p: Country) => openEdit(p);
 
+  // Speichern: Unterscheidung zwischen Bearbeiten und Erstellen
   const handleSave = async () => {
     const isEdit = !!editItem;
 
@@ -132,6 +142,7 @@ export default function CountriesPage() {
     }
   };
 
+  // Benutzer hat Löschen angeklickt, öffne Bestätigungsdialog
   const handleDelete = async (p: Country) => {
     const idRaw = p.id_country ?? p.id;
     if (idRaw == null || String(idRaw).trim() === "") {

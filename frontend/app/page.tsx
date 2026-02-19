@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Globe, GraduationCap, BookOpen, Users, Building2, Briefcase, User, Zap, Database, Shield } from "lucide-react"
 
+// Startseite mit Statistikübersicht
 export default function HomePage() {
+  // Zustände für Anzahl der Einträge in den Haupttabellen
   const [stats, setStats] = useState<{
     dozenten: number;
     kurse: number;
@@ -16,8 +18,9 @@ export default function HomePage() {
     lernende: 0,
     lehrbetriebe: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // zeigt Ladezustand der Statistik an
 
+  // beim Mounten Statistiken parallel abrufen
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -49,6 +52,7 @@ export default function HomePage() {
     fetchStats();
   }, []);
 
+  // Konfiguration der Statistikkarten, die auf der Seite angezeigt werden
   const statCards = [
     { label: 'Lehrbetriebe', value: stats.lehrbetriebe, icon: Building2, href: '/lehrbetriebe'},
     { label: 'Lernende', value: stats.lernende, icon: User, href: '/lernende'},

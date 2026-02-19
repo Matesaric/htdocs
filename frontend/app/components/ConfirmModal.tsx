@@ -1,6 +1,10 @@
 "use client";
 import React from "react";
 
+// Wiederverwendbarer Dialog für Bestätigungen (z.B. beim Löschen)
+// Anzeigeoptionen: Titel, Fehlergrund, Beschriftungen für Knöpfe
+// onConfirm ist optional, damit auch nur eine Information angezeigt werden kann
+
 type Props = {
   title?: string;
   reason?: string | null;
@@ -12,6 +16,7 @@ type Props = {
 };
 
 export default function ConfirmModal({ title = "Löschen?", reason = null, confirmLabel = "Ja, löschen", cancelLabel = "Abbrechen", onCancel, onConfirm, children }: Props) {
+  // Struktur des Overlays; Schachtelung für Zentrales Dialogfeld
   return (
     <div className="delete-dialog-overlay">
       <div className="delete-dialog">

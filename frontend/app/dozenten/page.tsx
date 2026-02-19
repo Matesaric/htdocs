@@ -349,7 +349,7 @@ export default function DozentenPage() {
               <label>
                 Land
                 <select value={String((editForm.nr_land as any) ?? "")} onChange={(e) => setEditForm((f) => ({ ...f, nr_land: e.target.value === "" ? "" : Number(e.target.value) }))}>
-                  <option value="">-- Bitte wählen --</option>
+                  <option value="">Bitte wählen</option>
                   {countries && countries.map((c) => (
                     <option key={c.id_country ?? c.id} value={c.id_country ?? c.id}>{c.country}</option>
                   ))}
@@ -359,7 +359,7 @@ export default function DozentenPage() {
               <label>
                 Geschlecht (m/w/d)
                 <select value={(editForm.geschlecht as string) || ""} onChange={(e) => setEditForm((f) => ({ ...f, geschlecht: e.target.value }))}>
-                  <option value="">-- Bitte wählen --</option>
+                  <option value="">Bitte wählen</option>
                   <option value="m">Männlich</option>
                   <option value="w">Weiblich</option>
                   <option value="d">Divers</option>
