@@ -35,14 +35,15 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="nav-container">
         <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-          <button className="mobile-hamburger" aria-label="Menü" onClick={() => setOpen(true)}>
-            <Menu />
-          </button>
           <Link href="/">
             <h2 className="nav-title">{getPageTitle()}</h2>
           </Link>
-        </div>
-        <div className="nav-links">
+      </div>
+      {/* Hamburger moved to the right side of the container */}
+      <button className="mobile-hamburger" aria-label="Menü" onClick={() => setOpen(true)}>
+        <Menu />
+      </button>
+      <div className="nav-links">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -57,10 +58,9 @@ export default function Navbar() {
           })}
         </div>
         {/* Mobile sidebar drawer */}
-        {open && (
-          <div>
-            <div className="mobile-overlay" onClick={() => setOpen(false)} />
-            <aside className="mobile-sidebar" role="dialog" aria-modal="true">
+        {/* always render sidebar/overlay so we can animate with CSS */}
+        <div className={open ? 'mobile-overlay visible' : 'mobile-overlay'} onClick={() => setOpen(false)} />
+        <aside className={open ? 'mobile-sidebar open' : 'mobile-sidebar'} role="dialog" aria-modal="true">
               <div className="mobile-sidebar-header">
                 <h3>{getPageTitle()}</h3>
                 <button onClick={() => setOpen(false)} aria-label="Schließen"><X /></button>
@@ -79,8 +79,7 @@ export default function Navbar() {
                 })}
               </div>
             </aside>
-          </div>
-        )}
+        {/* closing fragment removed; sidebar now always present */}
       </div>
     </nav>
   );

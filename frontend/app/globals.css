@@ -450,7 +450,14 @@ th:nth-child(6) { width: 15%; }
 /* Navigation: show hamburger by default, hide full nav; desktop rules in min-width media query */
 .nav-container { width: 96%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; }
 .nav-links { display: none; }
-.mobile-hamburger { display: inline-flex; border: none; background: transparent; color: white; padding: 6px; }
+.mobile-hamburger {
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  color: white;
+  padding: 6px;
+  margin-left: auto; /* push to right */
+}
 
 /* Make content narrow and mobile-friendly */
 main { width: 96%; margin: 16px auto 0; }
@@ -485,8 +492,41 @@ td, th { white-space: normal; }
 .details-column h2 { font-size: 16px; margin: 0 0 8px 0; }
 
 /* Mobile sidebar / drawer */
-.mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1200; }
-.mobile-sidebar { position: fixed; right: 0; top: 0; bottom: 0; width: 280px; background: white; z-index: 1300; box-shadow: -8px 0 24px rgba(0,0,0,0.15); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.mobile-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.mobile-sidebar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 280px;
+  background: white;
+  z-index: 1300;
+  box-shadow: -8px 0 24px rgba(0,0,0,0.15);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* start off-screen */
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  pointer-events: none;
+}
+.mobile-sidebar.open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
 .mobile-sidebar-header { display:flex; justify-content: space-between; align-items:center; }
 .mobile-sidebar-links { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .mobile-sidebar-links button { width: 100%; text-align: left; padding: 10px; background: none; border: 1px solid transparent; color: #222; }
