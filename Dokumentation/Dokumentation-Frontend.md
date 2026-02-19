@@ -32,7 +32,7 @@
 **Ziel:** Ein neuer Lernender wird erfolgreich angelegt und erscheint in der Liste.
 | Schritt | Aktion                                 | Erwartetes Ergebnis                                          | Tatsächliches Ergebnis                                       |
 |---------|----------------------------------------|--------------------------------------------------------------|--------------------------------------------------------------|
-| 1       | Seite „Lernende" öffnen                | Liste der Lernenden wird angezeigt                           | Liste der Lernenden wird angezeigt                           |
+| 1       | Seite "Lernende" öffnen                | Liste der Lernenden wird angezeigt                           | Liste der Lernenden wird angezeigt                           |
 | 2       | Button "Neuer Lernender" klicken | Formular öffnet sich                                         | Formular öffnet sich                                         |
 | 3       | Alle Daten eingeben     | Eingaben werden übernommen                                   | Eingaben werden übernommen                                   |
 | 4       | Speichern klicken                      | Neuer Lernender erscheint mit korrekten Daten in der Tabelle | Neuer Lernender erscheint mit korrekten Daten in der Tabelle |
