@@ -290,7 +290,7 @@ function getAllRecords($table) {
     if ($table === 'tbl_kurse_lernende') {
         $joins[] = "LEFT JOIN tbl_kurse k ON `tbl_kurse_lernende`.`nr_kurs` = k.`id_kurs`";
         $joins[] = "LEFT JOIN tbl_lernende l ON `tbl_kurse_lernende`.`nr_lernende` = l.`id_lernende`";
-        $selectExtra = ", k.`kursthema` AS kurs_titel, CONCAT(l.`vorname`, ' ', l.`nachname`) AS lernende_name";
+        $selectExtra = ", k.`kursthema` AS kurs_titel, k.`kursnummer` AS kursnummer, CONCAT(l.`vorname`, ' ', l.`nachname`) AS lernende_name";
     } elseif ($table === 'tbl_lehrbetriebe_lernende') {
         $joins[] = "LEFT JOIN tbl_lehrbetriebe lb ON `tbl_lehrbetriebe_lernende`.`nr_lehrbetrieb` = lb.`id_lehrbetrieb`";
         $joins[] = "LEFT JOIN tbl_lernende l ON `tbl_lehrbetriebe_lernende`.`nr_lernende` = l.`id_lernende`";

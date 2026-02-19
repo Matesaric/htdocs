@@ -10,6 +10,7 @@ type KurseLernende = {
   nr_lernende?: number | string;
   note?: number | string;
   kurs_titel?: string;
+  kursnummer?: string;
   lernende_name?: string;
 };
 
@@ -20,6 +21,8 @@ export default function KurseLernendePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<KurseLernende | null>(null);
   const [editForm, setEditForm] = useState<Partial<KurseLernende>>({});
+  const [kurse, setKurse] = useState<any[]>([]);
+  const [lernende, setLernende] = useState<any[]>([]);
   
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -58,7 +61,34 @@ export default function KurseLernendePage() {
       }
     };
 
+    const fetchRelations = async () => {
+      try {
+        const resp = await fetch("http://localhost/kurse.php?all=true");
+        if (resp.ok) {
+          const json = await resp.json();
+          setKurse(Array.isArray(json) ? json : []);
+        } else {
+          setKurse([]);
+        }
+      } catch {
+        setKurse([]);
+      }
+
+      try {
+        const resp = await fetch("http://localhost/lernende.php?all=true");
+        if (resp.ok) {
+          const json = await resp.json();
+          setLernende(Array.isArray(json) ? json : []);
+        } else {
+          setLernende([]);
+        }
+      } catch {
+        setLernende([]);
+      }
+    };
+
     fetchData();
+    fetchRelations();
   }, []);
 
   const openEdit = (p: KurseLernende) => {
@@ -197,6 +227,7 @@ export default function KurseLernendePage() {
       <table aria-label="Kurse Lernende Tabelle">
         <thead>
           <tr>
+            <th>Kursnummer</th>
             <th>Kurs</th>
             <th>Lernender</th>
             <th>Note</th>
@@ -206,11 +237,12 @@ export default function KurseLernendePage() {
         <tbody>
           {!filteredData || filteredData.length === 0 ? (
             <tr>
-              <td colSpan={4}>Keine Einträge vorhanden.</td>
+              <td colSpan={5}>Keine Einträge vorhanden.</td>
             </tr>
           ) : (
             filteredData.map((p, idx) => (
               <tr key={p.id_kurse_lernende ?? idx}>
+                <td>{p.kursnummer ?? "-"}</td>
                 <td>{p.kurs_titel || p.nr_kurs}</td>
                 <td>{p.lernende_name || p.nr_lernende}</td>
                 <td>{p.note ?? "-"}</td>
@@ -231,29 +263,50 @@ export default function KurseLernendePage() {
 
             <div className="form-grid">
               <label>
-                Nr. Kurs
-                <input
+                Kursnummer
+                <select
                   value={String(editForm.nr_kurs ?? "")}
                   onChange={(e) =>
                     setEditForm((f) => ({
                       ...f,
-                      nr_kurs: Number(e.target.value),
+                      nr_kurs: e.target.value === "" ? "" : Number(e.target.value),
                     }))
                   }
-                />
+                >
+                  <option value="">Bitte wählen</option>
+                  {kurse.map((k) => (
+                    <option key={k.id_kurs ?? k.id} value={k.id_kurs ?? k.id}>
+                      {k.kursnummer ?? k.kursthema ?? k.id_kurs ?? k.id}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label>
-                Nr. Lernende
-                <input
+                Lernende
+                <select
                   value={String(editForm.nr_lernende ?? "")}
                   onChange={(e) =>
                     setEditForm((f) => ({
                       ...f,
-                      nr_lernende: Number(e.target.value),
+                      nr_lernende: e.target.value === "" ? "" : Number(e.target.value),
                     }))
                   }
-                />
+                >
+                  <option value="">Bitte wählen</option>
+                  {lernende.map((l) => (
+                    <option
+                      key={l.id_lernende ?? l.id}
+                      value={l.id_lernende ?? l.id}
+                    >
+                      {l.lernende_name
+                        ? l.lernende_name
+                        : l.vorname || l.nachname
+                        ? `${l.vorname ?? ""} ${l.nachname ?? ""}`.trim()
+                        : l.id_lernende ?? l.id}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label className="full-width">
@@ -277,7 +330,6 @@ export default function KurseLernendePage() {
                 onClick={() => {
                   setEditOpen(false);
                   setEditItem(null);
-                  setOrigItem(null);
                 }}
               >
                 Abbrechen
@@ -300,6 +352,7 @@ export default function KurseLernendePage() {
           <div className="delete-info">
             <h4>Zuweisungs-Informationen:</h4>
             <div className="delete-info-field">
+              <strong>Kursnummer:</strong> {deleteConfirm.item.kursnummer ?? "-"}<br />
               <strong>Kurs:</strong> {deleteConfirm.item.kurs_titel ?? deleteConfirm.item.nr_kurs ?? "-"}
             </div>
             <div className="delete-info-field">

@@ -61,7 +61,36 @@ export default function LehrbetriebLernendePage() {
       }
     };
 
+    const fetchRelations = async () => {
+      // load lehrbetriebe for fk dropdown
+      try {
+        const resp = await fetch("http://localhost/lehrbetriebe.php?all=true");
+        if (resp.ok) {
+          const json = await resp.json();
+          setLehrbetriebe(Array.isArray(json) ? json : []);
+        } else {
+          setLehrbetriebe([]);
+        }
+      } catch {
+        setLehrbetriebe([]);
+      }
+
+      // load lernende for fk dropdown
+      try {
+        const resp = await fetch("http://localhost/lernende.php?all=true");
+        if (resp.ok) {
+          const json = await resp.json();
+          setLernende(Array.isArray(json) ? json : []);
+        } else {
+          setLernende([]);
+        }
+      } catch {
+        setLernende([]);
+      }
+    };
+
     fetchData();
+    fetchRelations();
   }, []);
 
   const openEdit = (p: LehrbetriebLernende) => {
@@ -262,29 +291,53 @@ export default function LehrbetriebLernendePage() {
 
             <div className="form-grid">
               <label>
-                Nr. Lehrbetrieb
-                <input
+                Lehrbetrieb
+                <select
                   value={String(editForm.nr_lehrbetrieb ?? "")}
                   onChange={(e) =>
                     setEditForm((f) => ({
                       ...f,
-                      nr_lehrbetrieb: Number(e.target.value),
+                      nr_lehrbetrieb: e.target.value === "" ? "" : Number(e.target.value),
                     }))
                   }
-                />
+                >
+                  <option value="">Bitte wählen</option>
+                  {lehrbetriebe.map((lb) => (
+                    <option
+                      key={lb.id_lehrbetrieb ?? lb.id}
+                      value={lb.id_lehrbetrieb ?? lb.id}
+                    >
+                      {lb.firma ?? lb.lehrbetrieb_name ?? lb.id_lehrbetrieb ?? lb.id}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label>
-                Nr. Lernende
-                <input
+                Lernende
+                <select
                   value={String(editForm.nr_lernende ?? "")}
                   onChange={(e) =>
                     setEditForm((f) => ({
                       ...f,
-                      nr_lernende: Number(e.target.value),
+                      nr_lernende: e.target.value === "" ? "" : Number(e.target.value),
                     }))
                   }
-                />
+                >
+                  <option value="">Bitte wählen</option>
+                  {lernende.map((l) => (
+                    <option
+                      key={l.id_lernende ?? l.id}
+                      value={l.id_lernende ?? l.id}
+                    >
+                      {l.lernende_name
+                        ? l.lernende_name
+                        : l.vorname || l.nachname
+                        ? `${l.vorname ?? ""} ${l.nachname ?? ""}`.trim()
+                        : l.id_lernende ?? l.id}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label>
